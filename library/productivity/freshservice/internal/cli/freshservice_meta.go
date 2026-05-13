@@ -1,4 +1,9 @@
 // Copyright 2026 mark-van-de-ven. Licensed under Apache-2.0. See LICENSE.
+//
+// PATCH(freshservice-novel-commands): tenant-specific code→label resolver
+// (Status/Priority/Type/Source/Urgency/Impact) backed by the synced
+// ticket-form-fields choices; each Freshservice tenant defines its own
+// integer codes, so the generator's static enum-to-label map is wrong.
 
 package cli
 

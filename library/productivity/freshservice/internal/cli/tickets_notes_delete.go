@@ -8,12 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newTicketsNotesDeleteCmd wires `tickets notes delete <conversation-id>`.
-// Freshservice stores notes as conversations and exposes deletion through
-// `DELETE /api/v2/conversations/{id}` (no ticket_id segment — the
-// conversation id alone identifies the note). The OpenAPI spec we generated
-// from did not declare this endpoint, so the generator never emitted a
-// delete-note command; this hand-authored wrapper closes that gap.
+// PATCH(freshservice-notes-delete): hand-authored DELETE /conversations/{id}.
+// Freshservice documents the endpoint but does not declare it in the OpenAPI
+// spec, so the generator never emitted a delete-note command. Notes live as
+// conversations; the conversation id alone identifies the note (no ticket_id
+// segment).
 //
 // Returns HTTP 204 No Content on success. The CLI surfaces success as a JSON
 // envelope so an agent can verify before/after with `tickets conversations

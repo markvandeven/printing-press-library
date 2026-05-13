@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "applied_at": "2026-05-13",
+  "base_run_id": "20260512-170855",
+  "base_printing_press_version": "4.5.0",
+  "patches": [
+    {
+      "id": "freshservice-domain-and-auth",
+      "summary": "Substitute FRESHSERVICE_DOMAIN into BaseURL and switch HTTP Basic to `apikey:` (empty password). Added normalizeFreshserviceDomain helper to accept the lenient pasted forms users actually have (bare slug, https://, /api/v2/, etc.).",
+      "reason": "Generator defaulted BaseURL to the placeholder `https://yourcompany.freshservice.com/api/v2` with no env-var substitution, so every API call DNS-failed. The generated AuthHeader() also assembled Basic credentials as `apikey:domain`; Freshservice's Basic scheme is `apikey:` (empty password) and rejects the alternative form. Discovered live, fixed in printed CLI, then filed against the generator.",
+      "files": [
+        "internal/config/config.go"
+      ],
+      "validated_outcome": "Live read smoke (tickets get/list, agents list, assets list, sync) succeeded against the real tenant after this fix; previously every request returned a transport-level DNS error or HTTP 401."
+    },
+    {
+      "id": "freshservice-filter-query-quoting",
+      "summary": "Wrap the value of `query=` in literal double quotes before sending /tickets/filter and /changes/filter requests, and route both filter commands through the wrapFreshserviceFilterQuery helper.",
+      "reason": "Freshservice's filter endpoint requires the entire query value to arrive as a double-quoted string before URL encoding; the generator emitted the raw user string and the API responded HTTP 500. Same quirk applies to /assets?filter=, so the resolver in assets_get.go calls the same helper.",
+      "files": [
+        "internal/cli/freshservice_novel.go",
+        "internal/cli/tickets_filter.go",
+        "internal/cli/changes_filter.go"
+      ],
+      "validated_outcome": "tickets filter --query \"status:2 AND priority:4\" now returns the expected page; previously returned `{\"description\":\"Validation failed\",\"errors\":[{\"field\":\"query\",\"message\":\"There was an unexpected error\"}]}` with HTTP 500."
+    },
+    {
+      "id": "freshservice-page-pagination",
+      "summary": "Change sync's cursorParam default from `after` to `page`, and synthesize the next integer page number whenever a full page came back without a body cursor.",
+      "reason": "Freshservice paginates exclusively by integer `?page=N` and exposes the next-page URL only in the HTTP Link response header. extractPageItems' body-cursor scan therefore never finds a cursor, and the sync loop stops after page 1. The generator's pagination-style detection picked `after` from the spec without checking that Freshservice declares no body cursor.",
+      "files": [
+        "internal/cli/sync.go"
+      ],
+      "validated_outcome": "`freshservice-pp-cli sync --resource tickets` paginates through all pages until items < per_page returns; previously stopped at 100 tickets even when the tenant had thousands."
+    },
+    {
+      "id": "freshservice-doctor-tenant-shape-and-probe",
+      "summary": "Doctor now (a) flags a .myfreshworks.com BaseURL as the Freshworks unified-org dashboard, not the Freshservice API tenant, and (b) issues an authenticated GET /agents/me probe with explicit branches for 401/403/404 and for the dashboard's HTML-200 response.",
+      "reason": "Users routinely paste their org dashboard subdomain (e.g. `<org>.myfreshworks.com`) when prompted for FRESHSERVICE_DOMAIN. That host returns the dashboard SPA's HTML with HTTP 200 for every API path, which the generator's reachability-only doctor treated as a successful API call — every downstream command then failed with confusing JSON-parse errors instead of an obvious 'wrong host' verdict.",
+      "files": [
+        "internal/cli/doctor.go"
+      ],
+      "validated_outcome": "doctor now prints `domain_hint: FAIL: ... looks like the Freshworks unified-org dashboard` and `credentials: FAIL: /agents/me returned HTML, not JSON` when the wrong subdomain is configured; previously printed `api: reachable` and `credentials: OK`."
+    },
+    {
+      "id": "freshservice-assets-display-id-resolver",
+      "summary": "Accept asset name or asset_tag as the GET /assets/{display_id} argument by issuing a one-shot /assets?filter=name:'…' (or asset_tag:'…') resolver before the canonical GET fires.",
+      "reason": "The OpenAPI path parameter is the numeric display_id, but the identifiers humans and agents actually have are name and asset_tag. The generator emitted a path-only command that returned 404 on every human-readable input.",
+      "files": [
+        "internal/cli/assets_get.go"
+      ],
+      "validated_outcome": "`assets get LAPTOP-001` resolves the asset_tag to its display_id and returns the asset record; previously returned HTTP 404."
+    },
+    {
+      "id": "freshservice-notes-create-private-default",
+      "summary": "Always send `body[\"private\"]` in tickets notes create, even when the flag is the zero value (false), and clarify the flag description.",
+      "reason": "The generator's 'omit optional bool when its zero-value matches the spec default' idiom interacts badly with Freshservice's server-side default of `private: true` on this endpoint. The CLI default of --private=false matches what a human typing `tickets note <id>` virtually always intends (public reply to the requester), but omitting the field shipped the note as private. Heads-up was caught during live write testing.",
+      "files": [
+        "internal/cli/tickets_notes_create-ticket.go"
+      ],
+      "validated_outcome": "`tickets notes create-ticket <id> --body \"…\"` (no --private flag) posts a public reply visible to the requester; previously posted as agent-only private."
+    },
+    {
+      "id": "freshservice-novel-commands",
+      "summary": "Hand-authored novel command set under freshservice_novel.go (breach-risk, my-queue, workload, change-collisions, recurrence, kb-gaps, orphan-assets, dept-sla, oncall-gap) and a tenant-specific code→label resolver in freshservice_meta.go backed by the synced ticket-form-fields choices.",
+      "reason": "These transcendence commands aggregate across resources (tickets + agents + groups + assets + changes + KB articles) and rely on FTS scoring against the synced local store; the OpenAPI spec describes the underlying endpoints but not the aggregation. Per-tenant integer codes for status/priority/type/source/urgency/impact mean a static enum-to-label map (what the generator emits) is wrong on every Freshservice tenant — the resolver synthesizes the map from synced choices at query time, with built-in fallbacks for the canonical 2/3/4/5 codes when the local store has not been hydrated yet.",
+      "files": [
+        "internal/cli/freshservice_novel.go",
+        "internal/cli/freshservice_meta.go"
+      ],
+      "validated_outcome": "All 9 novel commands return non-empty results against the live tenant; `tickets get` and `tickets list` decorate status/priority codes with the tenant's actual labels (e.g. custom status code 9 → 'Awaiting Customer Response') rather than blank or built-in defaults."
+    },
+    {
+      "id": "freshservice-notes-delete",
+      "summary": "New `tickets notes delete <conversation-id>` command wired into the notes subcommand tree. Hand-authored DELETE /conversations/{id} request with --dry-run / --yes consent gating and a JSON success envelope.",
+      "reason": "Freshservice documents DELETE /conversations/{id} but does not declare it in the OpenAPI spec we generated from, so the generator never emitted a delete-note command. Notes are stored as conversations and the conversation id alone identifies the note (no /tickets/{ticket_id}/ segment).",
+      "files": [
+        "internal/cli/tickets_notes_delete.go",
+        "internal/cli/tickets_notes.go"
+      ],
+      "validated_outcome": "`tickets notes delete <id> --yes` returns HTTP 204 and the note disappears from `tickets conversations list-ticket <ticket-id>`; previously there was no CLI surface for note deletion."
+    }
+  ],
+  "deferred_to_upstream": [
+    {
+      "summary": "Generator should detect Freshservice-style HTTP-Link-only pagination (no body cursor) and synthesize integer page advancement automatically",
+      "reason": "Filed as a printing-press generator issue. Same shape applies to any vendor that paginates via integer ?page=N with the next-page URL exclusively in the Link header."
+    },
+    {
+      "summary": "Generator should learn Basic-auth `<credential>:` (empty password) as a first-class auth shape",
+      "reason": "Filed as a printing-press generator issue. Freshservice, Zendesk, and similar vendors use this form; the generator currently emits `<username>:<password>` even when the spec or vendor docs describe an empty-password Basic flow."
+    },
+    {
+      "summary": "Generator should accept lenient subdomain inputs (bare slug, https://, trailing path) for tenant-scoped APIs",
+      "reason": "Filed as a printing-press generator issue. normalizeFreshserviceDomain is generic — every tenant-subdomain vendor benefits from the same normalization."
+    },
+    {
+      "summary": "Generator should preserve `private` (and similarly server-default-true) optional bools on the wire instead of omitting on zero value",
+      "reason": "Filed as a printing-press generator issue. The omit-zero idiom is correct for most optional bools but inverts intent when the server-side default differs from Go's zero value."
+    }
+  ]
+}

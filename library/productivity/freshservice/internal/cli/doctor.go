@@ -30,9 +30,9 @@ import (
 // false-positives on benign content. For example, a recipe titled "Just A
 // Moment of Pause Cookies" must NOT match the Cloudflare challenge marker;
 // only "<title>just a moment" (the actual interstitial title) does.
-// looksLikeDashboardHTML detects the Freshworks unified-org dashboard SPA
-// response. /agents/me on the wrong host returns this HTML page with a 200
-// status, which would otherwise look like a successful authenticated probe.
+// PATCH(freshservice-doctor-tenant-shape-and-probe): the Freshworks org
+// dashboard at <org>.myfreshworks.com returns this SPA HTML with HTTP 200 for
+// every API path, which would otherwise read as a successful probe.
 func looksLikeDashboardHTML(body []byte) bool {
 	if len(body) == 0 {
 		return false
@@ -226,12 +226,10 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 						report["api"] = fmt.Sprintf("unreachable: %s", reachErr)
 					}
 
-					// Step 1.5: Domain shape sanity. Freshservice tenants live at
-					// <tenant>.freshservice.com; the Freshworks unified-org
-					// dashboard at <org>.myfreshworks.com looks plausibly similar
-					// but returns the dashboard SPA's HTML for every API path,
-					// which produces confusing downstream failures. Surface this
-					// before the credential probe so the diagnosis is obvious.
+					// PATCH(freshservice-doctor-tenant-shape-and-probe): surface
+					// the .myfreshworks.com vs .freshservice.com tenant-shape
+					// trap before the credential probe; otherwise the dashboard
+					// SPA's 200 looks like a successful API call.
 					if strings.Contains(cfg.BaseURL, ".myfreshworks.com") {
 						report["domain_hint"] = "FAIL: " + cfg.BaseURL +
 							" looks like the Freshworks unified-org dashboard, not the Freshservice API tenant. " +

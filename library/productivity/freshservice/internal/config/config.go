@@ -85,10 +85,9 @@ func Load(configPath string) (*Config, error) {
 	if v := os.Getenv("FRESHSERVICE_BASE_URL"); v != "" {
 		cfg.BaseURL = v
 	} else if cfg.FreshserviceDomain != "" {
-		// Substitute the tenant domain into BaseURL when the user hasn't pinned
-		// it explicitly. Freshservice's REST API lives at
-		// https://<tenant>.freshservice.com/api/v2; without this substitution
-		// every request would hit the placeholder host and DNS-fail.
+		// PATCH(freshservice-domain-and-auth): substitute tenant subdomain into
+		// BaseURL; default emitted by the generator was the placeholder host
+		// "yourcompany.freshservice.com" which DNS-fails on every request.
 		host := normalizeFreshserviceDomain(cfg.FreshserviceDomain)
 		cfg.BaseURL = "https://" + host + "/api/v2"
 	}
@@ -118,10 +117,8 @@ func (c *Config) AuthHeader() string {
 	if c.FreshserviceApikey == "" {
 		return ""
 	}
-	// Freshservice uses HTTP Basic auth with the API key as the username and
-	// an empty password. The trailing colon is required — base64-encoding
-	// "key:" yields a different value than base64-encoding "key" alone, and
-	// the API rejects the latter.
+	// PATCH(freshservice-domain-and-auth): HTTP Basic with `apikey:` (empty
+	// password); generator emitted `apikey:domain`, which Freshservice rejects.
 	credentials := c.FreshserviceApikey + ":"
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(credentials))
 }

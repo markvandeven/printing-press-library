@@ -434,10 +434,9 @@ func syncResource(c interface {
 		// Strategy: try array first, then common wrapper keys.
 		items, nextCursor, hasMore := extractPageItems(data, pageSize.cursorParam)
 
-		// Freshservice paginates via integer ?page=N with no body cursor,
-		// so synthesize the next page number whenever the current page came
-		// back full. Stops when the API returns fewer than per_page items,
-		// which is also the natural-end check below.
+		// PATCH(freshservice-page-pagination): Freshservice paginates by integer
+		// ?page=N with the next-page link only in the HTTP Link header;
+		// extractPageItems' body-cursor scan never finds one, so synthesize.
 		if pageSize.cursorParam == "page" && nextCursor == "" && len(items) >= pageSize.limit {
 			currentPage, _ := strconv.Atoi(cursor)
 			if currentPage < 1 {
@@ -608,14 +607,9 @@ type paginationDefaults struct {
 	limit       int
 }
 
-// determinePaginationDefaults returns the pagination parameter names to use.
-//
-// Freshservice paginates exclusively by integer ?page=N with no body cursor
-// (the next-page URL lives only in the HTTP Link response header). The
-// extractPageItems body-cursor scan therefore never finds a cursor and the
-// sync loop would stop after page 1. Synthesizing a numeric page cursor
-// keeps the existing loop structure but advances ?page= until items <
-// per_page returns.
+// PATCH(freshservice-page-pagination): generator defaulted cursorParam to
+// "after"; Freshservice paginates by integer ?page=N (loop would stop after
+// page 1 otherwise).
 func determinePaginationDefaults() paginationDefaults {
 	return paginationDefaults{
 		cursorParam: "page",

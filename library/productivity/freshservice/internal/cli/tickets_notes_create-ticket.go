@@ -55,11 +55,10 @@ func newTicketsNotesCreateTicketCmd(flags *rootFlags) *cobra.Command {
 				if bodyBody != "" {
 					body["body"] = bodyBody
 				}
-				// Always send `private` so the omission case doesn't fall
-				// back to Freshservice's server-side default (private: true).
-				// The CLI's default is `--private=false`, i.e. public —
-				// which matches what a user typing `tickets note <id>` is
-				// virtually always expecting.
+				// PATCH(freshservice-notes-create-private-default): always send
+				// `private`; generator's "omit optional bool when false" idiom
+				// hits Freshservice's server-side default (private: true), the
+				// opposite of what a `tickets note <id>` invocation expects.
 				body["private"] = bodyPrivate
 			}
 			data, statusCode, err := c.Post(path, body)

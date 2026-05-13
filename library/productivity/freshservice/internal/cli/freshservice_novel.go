@@ -1,4 +1,9 @@
 // Copyright 2026 mark-van-de-ven. Licensed under Apache-2.0. See LICENSE.
+//
+// PATCH(freshservice-novel-commands): hand-authored transcendence commands
+// (breach-risk, my-queue, workload, change-collisions, recurrence, kb-gaps,
+// orphan-assets, dept-sla, oncall-gap) and shared helpers; the OpenAPI spec
+// describes the underlying endpoints but not these cross-resource aggregations.
 
 package cli
 
@@ -18,12 +23,9 @@ import (
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-// wrapFreshserviceFilterQuery ensures the query string sent to /tickets/filter
-// and /changes/filter arrives surrounded by literal double quotes. Freshservice
-// rejects an unquoted query with HTTP 500 — the API expects the value to be a
-// double-quoted string before URL encoding. We strip any surrounding quotes
-// the user supplied so we don't end up with doubled-up quote characters in the
-// wire value.
+// PATCH(freshservice-filter-query-quoting): wrap query value in literal double
+// quotes for /tickets/filter and /changes/filter; generator emits the raw user
+// string, which Freshservice rejects with HTTP 500.
 func wrapFreshserviceFilterQuery(q string) string {
 	q = strings.TrimSpace(q)
 	if q == "" {

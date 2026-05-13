@@ -12,11 +12,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// resolveAssetDisplayID translates a human-readable asset identifier (name or
-// asset_tag) into the numeric display_id Freshservice's GET /assets/{display_id}
-// endpoint expects. Tries name first (the field users see in the portal), then
-// asset_tag. Returns a clear error on zero matches or multiple matches so the
-// caller surfaces an actionable message instead of a confusing 404.
+// PATCH(freshservice-assets-display-id-resolver): generator emits a path-only
+// GET that hard-fails on the human-readable identifiers (name, asset_tag) users
+// actually have; resolve to numeric display_id via a one-shot /assets filter.
 func resolveAssetDisplayID(c *client.Client, input string) (string, error) {
 	for _, field := range []string{"name", "asset_tag"} {
 		// Freshservice asset filter syntax: the whole expression must be

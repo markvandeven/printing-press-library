@@ -6,7 +6,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"sort"
 
 	"github.com/mvanhorn/printing-press-library/library/productivity/freshservice/internal/store"
@@ -50,21 +49,26 @@ Data must be synced first with the sync command.`,
 				if err != nil {
 					return fmt.Errorf("getting status: %w", err)
 				}
+				// PATCH(freshservice-analytics-cmd-outorstdout): route JSON
+				// through cmd.OutOrStdout() so tests and the MCP shell-out
+				// layer can redirect; generator wired analytics directly to
+				// os.Stdout, breaking both.
+				out := cmd.OutOrStdout()
 				if flags.asJSON {
-					enc := json.NewEncoder(os.Stdout)
+					enc := json.NewEncoder(out)
 					enc.SetIndent("", "  ")
 					return enc.Encode(status)
 				}
-				fmt.Println("Resource Type\tCount")
-				fmt.Println("-------------\t-----")
+				fmt.Fprintln(out, "Resource Type\tCount")
+				fmt.Fprintln(out, "-------------\t-----")
 				for rt, count := range status {
-					fmt.Printf("%s\t%d\n", rt, count)
+					fmt.Fprintf(out, "%s\t%d\n", rt, count)
 				}
 				return nil
 			}
 
 			if groupBy != "" {
-				return runGroupBy(db, resourceType, groupBy, limit, flags)
+				return runGroupBy(cmd, db, resourceType, groupBy, limit, flags)
 			}
 
 			count, err := db.Count(resourceType)
@@ -72,14 +76,15 @@ Data must be synced first with the sync command.`,
 				return fmt.Errorf("counting: %w", err)
 			}
 
+			out := cmd.OutOrStdout()
 			if flags.asJSON {
 				result := map[string]any{"resource_type": resourceType, "count": count}
-				enc := json.NewEncoder(os.Stdout)
+				enc := json.NewEncoder(out)
 				enc.SetIndent("", "  ")
 				return enc.Encode(result)
 			}
 
-			fmt.Printf("%s: %d records\n", resourceType, count)
+			fmt.Fprintf(out, "%s: %d records\n", resourceType, count)
 			return nil
 		},
 	}
@@ -92,7 +97,7 @@ Data must be synced first with the sync command.`,
 	return cmd
 }
 
-func runGroupBy(db *store.Store, resourceType, field string, limit int, flags *rootFlags) error {
+func runGroupBy(cmd *cobra.Command, db *store.Store, resourceType, field string, limit int, flags *rootFlags) error {
 	items, err := db.List(resourceType, 0)
 	if err != nil {
 		return err
@@ -121,16 +126,17 @@ func runGroupBy(db *store.Store, resourceType, field string, limit int, flags *r
 		sorted = sorted[:limit]
 	}
 
+	out := cmd.OutOrStdout()
 	if flags.asJSON {
-		enc := json.NewEncoder(os.Stdout)
+		enc := json.NewEncoder(out)
 		enc.SetIndent("", "  ")
 		return enc.Encode(sorted)
 	}
 
-	fmt.Printf("%s\tCount\n", field)
-	fmt.Println("---\t-----")
+	fmt.Fprintf(out, "%s\tCount\n", field)
+	fmt.Fprintln(out, "---\t-----")
 	for _, kv := range sorted {
-		fmt.Printf("%s\t%d\n", kv.Key, kv.Count)
+		fmt.Fprintf(out, "%s\t%d\n", kv.Key, kv.Count)
 	}
 	return nil
 }

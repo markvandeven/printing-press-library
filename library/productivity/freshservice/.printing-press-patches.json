@@ -79,6 +79,42 @@
         "internal/cli/tickets_notes.go"
       ],
       "validated_outcome": "`tickets notes delete <id> --yes` returns HTTP 204 and the note disappears from `tickets conversations list-ticket <ticket-id>`; previously there was no CLI surface for note deletion."
+    },
+    {
+      "id": "freshservice-logout-clears-apikey",
+      "summary": "Extend ClearTokens to also zero FreshserviceApikey and AuthHeaderVal so `auth logout` actually drops the credential under Freshservice's API-key/Basic auth model.",
+      "reason": "Greptile P1 on PR #533. Generator's ClearTokens is OAuth-shaped — it clears AccessToken/RefreshToken/TokenExpiry but leaves the API-key fields intact. Because AuthHeader() rebuilds the Basic credential from FreshserviceApikey, every command run after `auth logout` continued to authenticate successfully.",
+      "files": [
+        "internal/config/config.go"
+      ],
+      "validated_outcome": "`auth logout` followed by any authenticated command now fails with 'no credentials configured' as expected; previously the command succeeded as if logout had never happened."
+    },
+    {
+      "id": "freshservice-resolvebyname-field-guard",
+      "summary": "Add the same validIdentifierRE.MatchString(field) guard ListField uses, so ResolveByName cannot fmt.Sprintf an unvalidated field name into the json_extract SQL path.",
+      "reason": "Greptile P1 (security) on PR #533. ListField and ResolveByName were intended to mirror each other (the in-file comment at store.go:1966 states this), but the generator emitted the validIdentifierRE guard only on ListField. Today's callers all pass literal identifiers like \"name\"/\"email\", so blast radius is bounded — but the asymmetry is the real smell and the guard belongs there as defense in depth.",
+      "files": [
+        "internal/store/store.go"
+      ],
+      "validated_outcome": "ResolveByName now silently skips any matchFields value that does not look like a SQL identifier; legitimate callers (passing \"name\"/\"key\"/\"email\") behave identically."
+    },
+    {
+      "id": "freshservice-analytics-cmd-outorstdout",
+      "summary": "Route analytics JSON and text output through cmd.OutOrStdout() instead of os.Stdout in both the summary path and runGroupBy. Threaded *cobra.Command into runGroupBy so it has the writer available.",
+      "reason": "Greptile P2 on PR #533. Direct os.Stdout writes bypass both test redirection (`cmd.SetOut(buf)` in unit tests) and the MCP shell-out layer that captures CLI output. Every other command in the package routes through cmd.OutOrStdout(); analytics was the lone exception.",
+      "files": [
+        "internal/cli/analytics.go"
+      ],
+      "validated_outcome": "`analytics --json` output is now capturable via `cmd.SetOut(buf)` in tests and is correctly proxied through MCP; previously the writer-redirection was silently ignored."
+    },
+    {
+      "id": "freshservice-auth-hint-domain-placeholder",
+      "summary": "Show a real Freshservice subdomain example for FRESHSERVICE_DOMAIN (acme.freshservice.com) instead of the generator's token-shaped \"your-token-here\" placeholder. Clarify that the value is the tenant subdomain, not the Freshworks org dashboard.",
+      "reason": "Greptile P2 on PR #533. The generator emits the same token placeholder for every required env var, but FRESHSERVICE_DOMAIN is a subdomain. A user copying the hint verbatim ends up either with a literal \"your-token-here\" host (DNS-fails) or guesses at <org>.myfreshworks.com (the Freshworks unified-org dashboard) — exactly the trap that the doctor command was built to diagnose. The hint should not be the on-ramp to the trap.",
+      "files": [
+        "internal/cli/auth.go"
+      ],
+      "validated_outcome": "`auth status` for an unconfigured CLI now prints `export FRESHSERVICE_DOMAIN=\"acme.freshservice.com\"` with an inline note about the tenant-vs-dashboard distinction; previously printed the misleading \"your-token-here\" form."
     }
   ],
   "deferred_to_upstream": [
@@ -97,6 +133,22 @@
     {
       "summary": "Generator should preserve `private` (and similarly server-default-true) optional bools on the wire instead of omitting on zero value",
       "reason": "Filed as a printing-press generator issue. The omit-zero idiom is correct for most optional bools but inverts intent when the server-side default differs from Go's zero value."
+    },
+    {
+      "summary": "Generator's ClearTokens template should clear API-key fields, not just OAuth fields",
+      "reason": "Greptile P1 on PR #533 (Freshservice). The OAuth-shaped ClearTokens applies to every API-key-auth CLI the generator prints — same bug class across the library."
+    },
+    {
+      "summary": "Generator should emit validIdentifierRE guards symmetrically across mirrored store helpers",
+      "reason": "Greptile P1 (security) on PR #533. ListField has the guard; ResolveByName, emitted from the same store template, does not. Any CLI generated from this template inherits the asymmetry."
+    },
+    {
+      "summary": "Generator-emitted analytics commands should route writes through cmd.OutOrStdout()",
+      "reason": "Greptile P2 on PR #533. The analytics template wires JSON and text output to os.Stdout directly, breaking test redirection and MCP shell-out. Applies to every printed CLI that includes the analytics command."
+    },
+    {
+      "summary": "Generator's auth-status hint should produce env-var-shape-specific placeholders, not a uniform token placeholder",
+      "reason": "Greptile P2 on PR #533. The 'your-token-here' placeholder is correct for token env vars but wrong for hosts/domains/region IDs/etc. Every API with a non-token required env var inherits the trap."
     }
   ]
 }

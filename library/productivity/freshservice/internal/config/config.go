@@ -160,10 +160,16 @@ func (c *Config) SaveCredential(token string) error {
 	return c.save()
 }
 
+// PATCH(freshservice-logout-clears-apikey): also drop FreshserviceApikey and
+// AuthHeaderVal; generator's ClearTokens was OAuth-shaped and left the
+// API-key credential intact, so `auth logout` did not actually log the user
+// out under Freshservice's Basic-auth model.
 func (c *Config) ClearTokens() error {
 	c.AccessToken = ""
 	c.RefreshToken = ""
 	c.TokenExpiry = time.Time{}
+	c.FreshserviceApikey = ""
+	c.AuthHeaderVal = ""
 	return c.save()
 }
 

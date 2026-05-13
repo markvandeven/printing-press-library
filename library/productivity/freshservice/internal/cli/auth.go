@@ -87,10 +87,15 @@ func newAuthStatusCmd(flags *rootFlags) *cobra.Command {
 			if !authed {
 				fmt.Fprintln(w, red("Not authenticated"))
 				fmt.Fprintln(w, "")
-				fmt.Fprintln(w, "Set your token:")
-				fmt.Fprintln(w, "  export FRESHSERVICE_APIKEY=\"your-token-here\"")
-				fmt.Fprintln(w, "  export FRESHSERVICE_DOMAIN=\"your-token-here\"")
-				fmt.Fprintf(w, "  freshservice-pp-cli auth set-token <token>\n")
+				// PATCH(freshservice-auth-hint-domain-placeholder): show a real
+				// subdomain example for FRESHSERVICE_DOMAIN; generator's
+				// token-shaped placeholder ("your-token-here") steered users
+				// into the .myfreshworks.com vs .freshservice.com trap that
+				// doctor is specifically built to diagnose.
+				fmt.Fprintln(w, "Set your credentials:")
+				fmt.Fprintln(w, "  export FRESHSERVICE_APIKEY=\"your-api-key-here\"")
+				fmt.Fprintln(w, "  export FRESHSERVICE_DOMAIN=\"acme.freshservice.com\"  # your Freshservice tenant subdomain, not the Freshworks org dashboard")
+				fmt.Fprintf(w, "  freshservice-pp-cli auth set-token <api-key>\n")
 				return authErr(fmt.Errorf("no credentials configured"))
 			}
 

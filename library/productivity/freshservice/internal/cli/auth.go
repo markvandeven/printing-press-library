@@ -37,10 +37,14 @@ func newAuthSetupCmd(_ *rootFlags) *cobra.Command {
 			w := cmd.OutOrStdout()
 			fmt.Fprintln(w, "No setup URL is configured for this CLI; check the API's docs.")
 			fmt.Fprintln(w, "")
+			// PATCH(freshservice-auth-hint-domain-placeholder): companion fix
+			// to the auth-status hint — the auth-setup output is the other site
+			// the generator emits the uniform "<your-token>" placeholder. Same
+			// trap (.myfreshworks.com vs .freshservice.com); same fix.
 			fmt.Fprintln(w, "Then set:")
-			fmt.Fprintln(w, "  export FRESHSERVICE_APIKEY=\"<your-token>\"")
-			fmt.Fprintln(w, "  export FRESHSERVICE_DOMAIN=\"<your-token>\"")
-			fmt.Fprintln(w, "  freshservice-pp-cli auth set-token <token>")
+			fmt.Fprintln(w, "  export FRESHSERVICE_APIKEY=\"<your-api-key>\"")
+			fmt.Fprintln(w, "  export FRESHSERVICE_DOMAIN=\"acme.freshservice.com\"  # your Freshservice tenant subdomain, not the Freshworks org dashboard")
+			fmt.Fprintln(w, "  freshservice-pp-cli auth set-token <api-key>")
 			if !launch {
 				return nil
 			}

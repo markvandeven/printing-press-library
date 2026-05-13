@@ -109,12 +109,21 @@
     },
     {
       "id": "freshservice-auth-hint-domain-placeholder",
-      "summary": "Show a real Freshservice subdomain example for FRESHSERVICE_DOMAIN (acme.freshservice.com) instead of the generator's token-shaped \"your-token-here\" placeholder. Clarify that the value is the tenant subdomain, not the Freshworks org dashboard.",
-      "reason": "Greptile P2 on PR #533. The generator emits the same token placeholder for every required env var, but FRESHSERVICE_DOMAIN is a subdomain. A user copying the hint verbatim ends up either with a literal \"your-token-here\" host (DNS-fails) or guesses at <org>.myfreshworks.com (the Freshworks unified-org dashboard) — exactly the trap that the doctor command was built to diagnose. The hint should not be the on-ramp to the trap.",
+      "summary": "Show a real Freshservice subdomain example for FRESHSERVICE_DOMAIN (acme.freshservice.com) instead of the generator's token-shaped placeholder, in both `auth status` and `auth setup`. Clarify that the value is the tenant subdomain, not the Freshworks org dashboard.",
+      "reason": "Greptile P2 on PR #533. The generator emits the same token placeholder for every required env var, but FRESHSERVICE_DOMAIN is a subdomain. A user copying the hint verbatim ends up either with a literal placeholder host (DNS-fails) or guesses at <org>.myfreshworks.com (the Freshworks unified-org dashboard) — exactly the trap that the doctor command was built to diagnose. The hint should not be the on-ramp to the trap. Greptile's second-pass review flagged that `auth setup` was the companion site to the originally-patched `auth status`; both now corrected.",
       "files": [
         "internal/cli/auth.go"
       ],
-      "validated_outcome": "`auth status` for an unconfigured CLI now prints `export FRESHSERVICE_DOMAIN=\"acme.freshservice.com\"` with an inline note about the tenant-vs-dashboard distinction; previously printed the misleading \"your-token-here\" form."
+      "validated_outcome": "Both `auth status` (unconfigured) and `auth setup` now print `export FRESHSERVICE_DOMAIN=\"acme.freshservice.com\"` with an inline note about the tenant-vs-dashboard distinction; previously printed the misleading token-shaped placeholder."
+    },
+    {
+      "id": "freshservice-authsource-tenant-vs-credential",
+      "summary": "Do not overwrite `cfg.AuthSource` from the FRESHSERVICE_DOMAIN env-var block. The domain env var is tenant routing, not a credential — labeling AuthSource as `env:FRESHSERVICE_DOMAIN` misreports where the credential came from when both env vars are set.",
+      "reason": "Greptile residual finding on PR #533. The generator's env-var override block sets `cfg.AuthSource` after every assignment, including non-credential env vars like `FRESHSERVICE_DOMAIN`. When both APIKEY and DOMAIN are set via env (the common case), the second assignment overwrites the first, and `doctor` reports the wrong env var as the credential source. Matches the existing generator finding in printing-press issue #1158 (\"Generated config.go AuthHeader() unconditionally overwrites AuthSource\").",
+      "files": [
+        "internal/config/config.go"
+      ],
+      "validated_outcome": "`doctor` now reports `auth_source: env:FRESHSERVICE_APIKEY` when both env vars are set; previously reported `env:FRESHSERVICE_DOMAIN`. No behavior change when only one env var is set."
     }
   ],
   "deferred_to_upstream": [
@@ -149,6 +158,14 @@
     {
       "summary": "Generator's auth-status hint should produce env-var-shape-specific placeholders, not a uniform token placeholder",
       "reason": "Greptile P2 on PR #533. The 'your-token-here' placeholder is correct for token env vars but wrong for hosts/domains/region IDs/etc. Every API with a non-token required env var inherits the trap."
+    },
+    {
+      "summary": "Generator's auth-setup template should mirror auth-status's env-var shape-specific placeholders",
+      "reason": "Greptile residual finding on PR #533. `newAuthSetupCmd` emits the same generator template as `newAuthStatusCmd`. The two should share a single rendering function — fixing one but not the other (as happened in this round) leaves the same trap in the other site."
+    },
+    {
+      "summary": "Generator's env-var override block should label AuthSource only from credential env vars, not from tenant/routing env vars",
+      "reason": "Greptile residual finding on PR #533. The template currently overwrites `cfg.AuthSource` after every env-var assignment, regardless of whether the env var represents a credential or tenant routing. Adjacent to printing-press issue #1158 (\"Generated config.go AuthHeader() unconditionally overwrites AuthSource\"). Fix: emit `AuthSource = \"env:\" + name` only when the assigned field is the credential, not when it's a routing/identity tag."
     }
   ]
 }

@@ -60,7 +60,11 @@ func Load(configPath string) (*Config, error) {
 	}
 	if v := os.Getenv("FRESHSERVICE_DOMAIN"); v != "" {
 		cfg.FreshserviceDomain = v
-		cfg.AuthSource = "env:FRESHSERVICE_DOMAIN"
+		// PATCH(freshservice-authsource-tenant-vs-credential): do NOT overwrite
+		// AuthSource here. FRESHSERVICE_DOMAIN is tenant routing, not a
+		// credential — overwriting "env:FRESHSERVICE_APIKEY" with
+		// "env:FRESHSERVICE_DOMAIN" makes doctor misreport where the credential
+		// came from when both env vars are set.
 	}
 
 	// Label config-file-derived credentials so doctor can distinguish

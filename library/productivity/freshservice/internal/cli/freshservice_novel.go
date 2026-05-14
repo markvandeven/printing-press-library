@@ -441,7 +441,17 @@ Requires a prior 'freshservice-pp-cli sync' run.`,
 				}
 				queue = append(queue, row)
 			}
-			sort.Slice(queue, func(i, j int) bool {
+			// PATCH(freshservice-myqueue-no-due-sort): tickets without due_by
+			// have no SLA clock; previously they kept MinutesTo at its float64
+			// zero value and floated to the top as if due-right-now. Sort
+			// SLA-tracked tickets first (by minutes remaining), then the
+			// no-SLA tickets after them in their natural store order.
+			sort.SliceStable(queue, func(i, j int) bool {
+				iHasDue := queue[i].DueBy != ""
+				jHasDue := queue[j].DueBy != ""
+				if iHasDue != jHasDue {
+					return iHasDue
+				}
 				return queue[i].MinutesTo < queue[j].MinutesTo
 			})
 
@@ -496,7 +506,13 @@ Requires a prior 'freshservice-pp-cli sync' run.`,
 			fmt.Fprintf(cmd.OutOrStdout(), "Open tickets for %s: %d\n", agent, len(queue))
 			tRows := make([][]string, 0, len(queue))
 			for _, r := range queue {
-				tRows = append(tRows, []string{r.ID, r.Priority, r.Status, fmt.Sprintf("%.0f", r.MinutesTo), truncate(r.Subject, 60)})
+				// PATCH(freshservice-myqueue-no-due-sort): tickets without an
+				// SLA clock render MINUTES as "—" instead of "0".
+				minutes := "—"
+				if r.DueBy != "" {
+					minutes = fmt.Sprintf("%.0f", r.MinutesTo)
+				}
+				tRows = append(tRows, []string{r.ID, r.Priority, r.Status, minutes, truncate(r.Subject, 60)})
 			}
 			if err := flags.printTable(cmd, []string{"ID", "PRIORITY", "STATUS", "MINUTES", "SUBJECT"}, tRows); err != nil {
 				return err

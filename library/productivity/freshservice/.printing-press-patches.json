@@ -127,12 +127,22 @@
     },
     {
       "id": "freshservice-cache-owner-only-perms",
-      "summary": "Tighten `writeCache` to 0o600 files in a 0o700 directory, matching the config file's permissions.",
-      "reason": "Greptile blocking (security) finding on PR #533 (round 3). The generator's writeCache template uses 0o644 / 0o755 (world-readable). API response cache contains real ITSM data — tickets, users, assets — which on shared/multi-user hosts becomes readable by every local user. The config file template correctly uses 0o600; the cache template was inconsistent.",
+      "summary": "Tighten cache writes to 0o600 files in a 0o700 directory across BOTH `internal/client/client.go:writeCache` (Greptile-flagged) and the secondary `internal/cache/cache.go:Set` (found in same-class audit Greptile didn't reach). Matches the config file's permissions.",
+      "reason": "Greptile blocking (security) finding on PR #533 (round 3) named client.go specifically; an own-audit found the same 0o644/0o755 pattern in the secondary cache store. API response cache contains real ITSM data — tickets, users, assets — which on shared/multi-user hosts becomes readable by every local user. The config file template correctly uses 0o600; both cache templates were inconsistent.",
       "files": [
-        "internal/client/client.go"
+        "internal/client/client.go",
+        "internal/cache/cache.go"
       ],
-      "validated_outcome": "Cache files and the cache directory under `~/.cache/freshservice-pp-cli/` are now owner-only (0o600/0o700). Existing caches written with the old permissions are not retroactively tightened; users on shared hosts should `chmod -R go-rwx ~/.cache/freshservice-pp-cli` once after upgrade."
+      "validated_outcome": "Both `~/.cache/freshservice-pp-cli/` (primary) and the secondary cache directory now owner-only (0o600/0o700). Existing caches written with the old permissions are not retroactively tightened; users on shared hosts should `chmod -R go-rwx ~/.cache/freshservice-pp-cli` once after upgrade."
+    },
+    {
+      "id": "freshservice-store-owner-only-perms",
+      "summary": "Tighten the SQLite DB directory to 0o700 and chmod the DB file to 0o600 after the driver creates it.",
+      "reason": "Own-audit follow-up to the Greptile cache-perms finding. The SQLite database under `~/.local/share/freshservice-pp-cli/` (or platform equivalent) contains the *primary* synced data corpus — tickets, requesters, assets, KB articles, group/department metadata — strictly more sensitive than the response cache Greptile flagged. Generator's 0o755 directory left the DB file's effective permissions to the user's umask (typically 0o644 = world-readable). Tightening dir to 0o700 and explicit chmod on the DB file closes the same exposure class.",
+      "files": [
+        "internal/store/store.go"
+      ],
+      "validated_outcome": "The DB directory is owner-only; the DB file itself is 0o600 after the first open. New installs are tight from creation; existing installs should `chmod -R go-rwx ~/.local/share/freshservice-pp-cli` once after upgrade."
     },
     {
       "id": "freshservice-myqueue-no-due-sort",
@@ -195,8 +205,8 @@
       "reason": "Greptile residual finding on PR #533. The template currently overwrites `cfg.AuthSource` after every env-var assignment, regardless of whether the env var represents a credential or tenant routing. Adjacent to printing-press issue #1158 (\"Generated config.go AuthHeader() unconditionally overwrites AuthSource\"). Fix: emit `AuthSource = \"env:\" + name` only when the assigned field is the credential, not when it's a routing/identity tag."
     },
     {
-      "summary": "Generator's writeCache template should match the config file's 0o600/0o700 permissions, not 0o644/0o755",
-      "reason": "Greptile blocking finding on PR #533 round 3. The cache holds real API response data (the same data the user just authenticated to fetch); world-readable permissions expose it to every local account on shared hosts. The config template already gets this right; the cache template is inconsistent."
+      "summary": "Generator's cache + store templates should ALL use 0o600/0o700, not 0o644/0o755 — applies to client.go:writeCache, cache.go:Set, AND store.go SQLite DB directory + file",
+      "reason": "Greptile flagged client.go:writeCache; own-audit found two more sites with the same bug class. The SQLite DB site is the most sensitive (full synced data) and the easiest for generator audit to miss because the file's effective permissions come from the OS umask after sql.Open. Generator should emit 0o700 dirs + explicit os.Chmod(file, 0o600) after every DB/cache open across all data-at-rest templates."
     },
     {
       "summary": "Generator's AdaptiveLimiter.Wait template should reserve next-slot atomically, not lock/unlock/sleep/lock",

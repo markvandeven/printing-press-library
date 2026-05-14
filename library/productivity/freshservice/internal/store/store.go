@@ -90,7 +90,12 @@ func OpenReadOnly(dbPath string) (*Store, error) {
 // retry-on-SQLITE_BUSY loop and propagates ctx.Err() back to the caller
 // instead of waiting out the full migrationLockTimeout.
 func OpenWithContext(ctx context.Context, dbPath string) (*Store, error) {
-	if err := os.MkdirAll(filepath.Dir(dbPath), 0o755); err != nil {
+	// PATCH(freshservice-store-owner-only-perms): the SQLite DB is the most
+	// sensitive artifact on disk (full synced ticket/user/asset corpus).
+	// Generator's 0o755 directory + umask-controlled DB file (typically 0o644)
+	// left it world-readable on shared hosts. Tighten the directory to 0o700
+	// and chmod the DB file to 0o600 after the SQLite driver creates it.
+	if err := os.MkdirAll(filepath.Dir(dbPath), 0o700); err != nil {
 		return nil, fmt.Errorf("creating db directory: %w", err)
 	}
 
@@ -98,6 +103,10 @@ func OpenWithContext(ctx context.Context, dbPath string) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("opening database: %w", err)
 	}
+	// Tighten DB file perms once the driver has created it. Ignore "not yet
+	// created" errors — the file will appear on the first write and inherit
+	// the 0o700 dir's protection in the meantime.
+	_ = os.Chmod(dbPath, 0o600)
 
 	// WAL mode + 2 connections allows one read cursor open while a second
 	// query executes (e.g., analytics commands calling helpers during row

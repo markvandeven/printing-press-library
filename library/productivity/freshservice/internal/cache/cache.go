@@ -44,8 +44,11 @@ func (s *Store) Get(key string) (json.RawMessage, bool) {
 
 // Set stores a value in the cache.
 func (s *Store) Set(key string, value json.RawMessage) {
-	_ = os.MkdirAll(s.Dir, 0o755)
-	_ = os.WriteFile(s.path(key), []byte(value), 0o644)
+	// PATCH(freshservice-cache-owner-only-perms): same class as the client.go
+	// fix — generator's 0o644/0o755 left cached API response data
+	// world-readable on shared hosts. Match config file's 0o600/0o700.
+	_ = os.MkdirAll(s.Dir, 0o700)
+	_ = os.WriteFile(s.path(key), []byte(value), 0o600)
 }
 
 // Clear removes all cached entries.

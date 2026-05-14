@@ -145,6 +145,24 @@
       "validated_outcome": "The DB directory is owner-only; the DB file itself is 0o600 after the first open. New installs are tight from creation; existing installs should `chmod -R go-rwx ~/.local/share/freshservice-pp-cli` once after upgrade."
     },
     {
+      "id": "freshservice-store-list-no-limit-sentinel",
+      "summary": "`Store.List(resourceType, 0)` now means no-limit (SQL LIMIT -1) rather than silently capping at 200. Fixes group-by analytics dropping rows beyond the cap and matches the `0 = no limit` semantics the existing callers already documented in their inline comments.",
+      "reason": "Greptile round-4 P1 on PR #533 (analytics group-by silently caps at 200). Root cause is in the store template: `Store.List` remaps `limit <= 0` to 200, contradicting the documented intent of `0` in `data_source.go:227` and `analytics.go:101`. Fixed at the source so both call sites are correct without changing their semantics.",
+      "files": [
+        "internal/store/store.go"
+      ],
+      "validated_outcome": "`analytics --group-by` on a synced tenant with N tickets aggregates over all N tickets, not the 200 most-recently-updated. `data_source list` similarly returns the full corpus. No call sites pass a positive limit today so the behavior change is observable only on the unbounded paths."
+    },
+    {
+      "id": "freshservice-oncall-gap-frt-fallback-removed",
+      "summary": "Remove the `frt_escalated_at` fallback from on-call gap detection. SLA-escalation time is when the breach timer fired, not when an agent responded; using it as a fallback excluded tickets that escalated without ever being responded to from the gap report.",
+      "reason": "Greptile round-4 P1 on PR #533. Hand-authored novel-command logic in `oncall-gap`: tickets with no `first_responded_at` should fall into the `time.Since(created)` branch (which correctly measures elapsed-since-creation against `--ack-minutes`). The earlier code instead read `frt_escalated_at` as a response timestamp, producing false negatives whenever the SLA escalation fell inside the ack window.",
+      "files": [
+        "internal/cli/freshservice_novel.go"
+      ],
+      "validated_outcome": "Tickets that were never responded to now appear in the gap report when their elapsed-since-creation exceeds `--ack-minutes`, regardless of whether the FRT SLA escalation fired in the meantime."
+    },
+    {
       "id": "freshservice-myqueue-no-due-sort",
       "summary": "In the hand-authored my-queue command, tickets without a `due_by` value now sort to the bottom and render their MINUTES column as `—` instead of `0`. Sort is now stable secondary on minutes-remaining.",
       "reason": "Greptile noted in PR #533 round-2 review (not elevated to an inline finding, but mentioned in the Important Files Changed remark): tickets with no due_by kept MinutesTo at its float64 zero, so they floated to the top of my-queue as if due-right-now. This is hand-authored code in freshservice_novel.go, not generator output — fix lives only in the printed CLI.",
@@ -211,6 +229,10 @@
     {
       "summary": "Generator's AdaptiveLimiter.Wait template should reserve next-slot atomically, not lock/unlock/sleep/lock",
       "reason": "Greptile blocking finding on PR #533 round 3. The current template's race window admits concurrent callers reading the same lastRequest and firing simultaneously, defeating rate-limiting under any concurrent sync (the default sync worker pool is 4 goroutines). Standard token-bucket-style reservation under the lock fixes it without changing the API surface or the rate semantics."
+    },
+    {
+      "summary": "Generator's Store.List template should honor `limit <= 0` as 'no limit' (SQL LIMIT -1), not silently cap at 200",
+      "reason": "Greptile round-4 P1 on PR #533. Existing callers in multiple templates (analytics, data_source) document `0 = no limit` in their inline comments — the implementation contradicts that, producing silent row drops in analytics aggregations on any store with more than 200 records of a resource type. Affects every printed CLI that ships the store + analytics templates."
     }
   ]
 }

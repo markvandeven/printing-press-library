@@ -1441,7 +1441,15 @@ Requires a prior 'freshservice-pp-cli sync' run.`,
 						continue
 					}
 				}
-				firstResp, hasResp := anyTime(t, "first_responded_at", "frt_escalated_at")
+				// PATCH(freshservice-oncall-gap-frt-fallback-removed): drop the
+				// `frt_escalated_at` fallback. That field marks when the
+				// First Response Time *SLA escalation timer fired* — i.e.,
+				// the SLA was breached — not when an agent actually responded.
+				// Using it as a fallback let tickets that escalated without
+				// ever being responded to look as if they had been acked at
+				// escalation time, silently excluding them from the gap report
+				// whenever escalation fell within --ack-minutes.
+				firstResp, hasResp := anyTime(t, "first_responded_at")
 				var ackMin float64
 				if hasResp {
 					ackMin = firstResp.Sub(created).Minutes()

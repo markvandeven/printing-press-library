@@ -747,8 +747,14 @@ func (s *Store) Get(resourceType, id string) (json.RawMessage, error) {
 }
 
 func (s *Store) List(resourceType string, limit int) ([]json.RawMessage, error) {
+	// PATCH(freshservice-store-list-no-limit-sentinel): generator silently
+	// remapped limit<=0 to 200, dropping rows for callers (analytics group-by,
+	// data_source's "return all synced data" path) that documented `0 = no
+	// limit` in their inline comments. SQLite's LIMIT -1 is the canonical
+	// "no limit" form; route through it so the API contract authors expected
+	// matches the implementation.
 	if limit <= 0 {
-		limit = 200
+		limit = -1
 	}
 	rows, err := s.db.Query(
 		`SELECT data FROM resources WHERE resource_type = ? ORDER BY updated_at DESC LIMIT ?`,

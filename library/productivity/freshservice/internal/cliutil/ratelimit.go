@@ -44,16 +44,24 @@ func (l *AdaptiveLimiter) Wait() {
 	if l == nil {
 		return
 	}
+	// PATCH(freshservice-ratelimit-toctou): reserve the next slot atomically
+	// before releasing the lock. Generator template read lastRequest, unlocked,
+	// then slept — concurrent callers all read the same timestamp, slept the
+	// same amount, and fired simultaneously, defeating the rate-limit guarantee.
+	// Each caller now claims its own slot under the lock; the sleep then waits
+	// until that specific slot's wall-clock time.
 	l.mu.Lock()
 	delay := time.Duration(float64(time.Second) / l.rate)
-	elapsed := time.Since(l.lastRequest)
-	l.mu.Unlock()
-	if elapsed < delay {
-		time.Sleep(delay - elapsed)
+	now := time.Now()
+	nextSlot := l.lastRequest.Add(delay)
+	if nextSlot.Before(now) {
+		nextSlot = now
 	}
-	l.mu.Lock()
-	l.lastRequest = time.Now()
+	l.lastRequest = nextSlot
 	l.mu.Unlock()
+	if wait := time.Until(nextSlot); wait > 0 {
+		time.Sleep(wait)
+	}
 }
 
 func (l *AdaptiveLimiter) OnSuccess() {

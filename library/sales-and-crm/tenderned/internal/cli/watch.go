@@ -230,18 +230,20 @@ func newWatchRunCmd(flags *rootFlags) *cobra.Command {
 			if curID > 0 {
 				params.Set("publicatieDatumVanaf", time.Now().UTC().AddDate(0, 0, -7).Format("2006-01-02"))
 			}
-			pageSize := limit
-			if pageSize <= 0 {
-				pageSize = 50
-			}
+			// PATCH: decouple page size from --limit. --limit is a total cap
+			// on returned notices (matching the flag's help text "Max notices
+			// to fetch this run"); page size is a fixed internal constant.
+			// Previously --limit set page size only, so a default --limit 50
+			// could return up to maxPages*50 = 10k notices over an hour-long
+			// run on a busy CPV stripe.
+			const pageSize = 50
 			params.Set("size", fmt.Sprintf("%d", pageSize))
 
 			// PATCH: walk all pages until either (a) the API reports no more
 			// pages, (b) we cross the cursor (every notice on the page has
 			// publicatieId <= curID — results are date-desc and IDs are
-			// monotonic), or (c) we hit MaxPages as a defensive cap.
-			// The previous single-page fetch silently dropped notices
-			// when the day's volume exceeded `size`.
+			// monotonic), (c) we hit the --limit total cap, or (d) we hit
+			// MaxPages as a defensive cap.
 			fresh := []json.RawMessage{}
 			maxID := curID
 			const maxPages = 200 // hard cap to keep one run bounded
@@ -287,6 +289,9 @@ func newWatchRunCmd(flags *rootFlags) *cobra.Command {
 						pageHadNew = true
 						if rid > maxID {
 							maxID = rid
+						}
+						if limit > 0 && len(fresh) >= limit {
+							break pageLoop
 						}
 					}
 				}

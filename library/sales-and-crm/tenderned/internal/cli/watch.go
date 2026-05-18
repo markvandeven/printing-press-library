@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -207,13 +208,27 @@ func newWatchRunCmd(flags *rootFlags) *cobra.Command {
 			if err := json.Unmarshal([]byte(filt.String), &filter); err != nil {
 				return err
 			}
+			// PATCH: cursor is the highest publicatieId seen, not a date string.
+			// The old date-string cursor lost notices that shared the same
+			// publicatieDatum as the previously-stored max (strict `>` on
+			// timestamp ties dropped them) and could miss back-filled notices
+			// posted with an earlier timestamp than the stored max. Tracking
+			// the integer publicatieId is monotonic, dedupes by row identity,
+			// and never loses notices to timestamp ties.
+			var curID int64
+			if cur.String != "" {
+				if id, perr := strconv.ParseInt(cur.String, 10, 64); perr == nil {
+					curID = id
+				}
+			}
 			params := url.Values{}
 			for k, v := range filter {
 				params.Set(k, fmt.Sprint(v))
 			}
-			// Force publicatieDatumVanaf to the cursor when present.
-			if cur.String != "" {
-				params.Set("publicatieDatumVanaf", cur.String[:10])
+			// Backfill window: when a cursor exists, ask the API for the
+			// last 7 days; we'll dedupe locally by publicatieId.
+			if curID > 0 {
+				params.Set("publicatieDatumVanaf", time.Now().UTC().AddDate(0, 0, -7).Format("2006-01-02"))
 			}
 			if limit > 0 {
 				params.Set("size", fmt.Sprintf("%d", limit))
@@ -244,26 +259,28 @@ func newWatchRunCmd(flags *rootFlags) *cobra.Command {
 				return err
 			}
 			fresh := []json.RawMessage{}
-			latest := cur.String
+			maxID := curID
 			for _, raw := range body.Content {
 				var v struct {
-					Date string `json:"publicatieDatum"`
+					ID json.Number `json:"publicatieId"`
 				}
 				_ = json.Unmarshal(raw, &v)
-				if cur.String == "" || v.Date > cur.String {
+				rid, _ := v.ID.Int64()
+				if rid > curID {
 					fresh = append(fresh, raw)
-					if v.Date > latest {
-						latest = v.Date
+					if rid > maxID {
+						maxID = rid
 					}
 				}
 			}
-			if latest != cur.String {
+			latestCursor := fmt.Sprintf("%d", maxID)
+			if maxID > curID {
 				// Surface cursor-update failure to stderr — silently
 				// swallowing it means the next watch run would replay
 				// notices we already returned this time, breaking the
 				// "only NEW notices" contract.
 				if _, uerr := s.DB().ExecContext(cmd.Context(), `UPDATE tn_watches SET cursor=?, updated_at=? WHERE name=?`,
-					latest, time.Now().UTC().Format(time.RFC3339), args[0]); uerr != nil {
+					latestCursor, time.Now().UTC().Format(time.RFC3339), args[0]); uerr != nil {
 					fmt.Fprintf(cmd.ErrOrStderr(), "warning: cursor update for watch %q failed: %v (next run may re-report these notices)\n", args[0], uerr)
 				}
 			}
@@ -271,14 +288,14 @@ func newWatchRunCmd(flags *rootFlags) *cobra.Command {
 				"watch":  args[0],
 				"new":    fresh,
 				"count":  len(fresh),
-				"cursor": latest,
+				"cursor": latestCursor,
 			}
 			if flags.asJSON {
 				enc := json.NewEncoder(cmd.OutOrStdout())
 				enc.SetIndent("", "  ")
 				return enc.Encode(result)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "%d new notice(s) for watch %q (cursor → %s)\n", len(fresh), args[0], latest)
+			fmt.Fprintf(cmd.OutOrStdout(), "%d new notice(s) for watch %q (cursor → %s)\n", len(fresh), args[0], latestCursor)
 			for _, raw := range fresh {
 				var v struct {
 					ID    string `json:"publicatieId"`

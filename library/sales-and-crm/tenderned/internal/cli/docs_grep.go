@@ -15,7 +15,7 @@ import (
 
 func newDocsGrepCmd(flags *rootFlags) *cobra.Command {
 	var dbPath, cpv, buyer string
-	var limit int
+	var limit, maxHits int
 
 	cmd := &cobra.Command{
 		Use:   "grep [pattern]",
@@ -26,7 +26,9 @@ text bodies, and runs the regex against each. Prints publicatieId, documentId
 and the matching line.
 
 PDF text extraction is best-effort; scanned-image PDFs return no matches.
-Use --limit to cap the number of notices scanned.
+Use --limit to cap the number of notices scanned and --max-hits to cap
+total matches kept in memory (default 1000) so a broad pattern across a
+large corpus doesn't grow unbounded.
 
 Operates on the local SQLite snapshot for notice selection; document content
 is fetched live from TenderNed.`,
@@ -59,6 +61,12 @@ is fetched live from TenderNed.`,
 
 			scanned := 0
 			hits := []map[string]any{}
+			truncated := false
+			// PATCH: cap total hits to bound memory. A broad pattern across
+			// thousands of documents would otherwise grow `hits` unbounded
+			// (each PDF can contribute hundreds of matching lines). Default
+			// of 1000 is a reasonable triage size; raise via --max-hits.
+		scanLoop:
 			for _, n := range notices {
 				if needle != "" && !strings.Contains(strings.ToLower(n.OpdrachtgeverNaam), needle) {
 					continue
@@ -82,6 +90,10 @@ is fetched live from TenderNed.`,
 					}
 					for _, line := range strings.Split(text, "\n") {
 						if pat.MatchString(line) {
+							if maxHits > 0 && len(hits) >= maxHits {
+								truncated = true
+								break scanLoop
+							}
 							hits = append(hits, map[string]any{
 								"publicatieId": pubID,
 								"documentId":   d.DocumentID,
@@ -97,6 +109,7 @@ is fetched live from TenderNed.`,
 				"notices_scanned": scanned,
 				"hits":            hits,
 				"hit_count":       len(hits),
+				"truncated":       truncated,
 			}
 			if flags.asJSON {
 				enc := json.NewEncoder(cmd.OutOrStdout())
@@ -107,6 +120,9 @@ is fetched live from TenderNed.`,
 				fmt.Fprintf(cmd.OutOrStdout(), "%v\t%v\t%s\n", h["publicatieId"], h["documentId"], h["line"])
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "\n%d hit(s) across %d notices scanned\n", len(hits), scanned)
+			if truncated {
+				fmt.Fprintf(cmd.OutOrStdout(), "(truncated at --max-hits=%d; raise the cap to see more)\n", maxHits)
+			}
 			return nil
 		},
 	}
@@ -114,6 +130,7 @@ is fetched live from TenderNed.`,
 	cmd.Flags().StringVar(&cpv, "cpv", "", "Comma-separated CPV stripes")
 	cmd.Flags().StringVar(&buyer, "buyer", "", "Substring match on buyer name")
 	cmd.Flags().IntVar(&limit, "limit", 25, "Max notices to scan")
+	cmd.Flags().IntVar(&maxHits, "max-hits", 1000, "Cap on total matching lines kept in memory (0 = no cap)")
 	return cmd
 }
 

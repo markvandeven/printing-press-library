@@ -293,14 +293,16 @@ func tnPublicationTypeBucket(code string) string {
 	switch {
 	case c == "EF01" || c == "EF03" || c == "EF04" || c == "EF05" || c == "EF06" || c == "EF07":
 		return "PIN" // Prior Information Notice
+	// PATCH: PMC must be checked BEFORE the EF1-prefix CN case below; otherwise
+	// strings.HasPrefix(c, "EF1") matches "EF10" first and routes it into CN.
+	case c == "EF10":
+		return "PMC" // Prior Market Consultation
 	case strings.HasPrefix(c, "EF1") || c == "EF16" || c == "EF17" || c == "EF18" || c == "EF20" || c == "EF21" || c == "EF22":
 		return "CN" // Contract Notice
 	case c == "EF25" || c == "EF26" || c == "EF27" || c == "EF28" || c == "EF29" || c == "EF30" || c == "EF31" || c == "EF32":
 		return "CAN" // Contract Award Notice
 	case c == "EF36" || c == "EF37" || c == "EF38" || c == "EF39":
 		return "MOD" // Modification post-award
-	case c == "EF10":
-		return "PMC" // Prior Market Consultation
 	default:
 		return "OTHER"
 	}

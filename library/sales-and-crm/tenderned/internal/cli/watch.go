@@ -230,47 +230,71 @@ func newWatchRunCmd(flags *rootFlags) *cobra.Command {
 			if curID > 0 {
 				params.Set("publicatieDatumVanaf", time.Now().UTC().AddDate(0, 0, -7).Format("2006-01-02"))
 			}
-			if limit > 0 {
-				params.Set("size", fmt.Sprintf("%d", limit))
-			} else {
-				params.Set("size", "50")
+			pageSize := limit
+			if pageSize <= 0 {
+				pageSize = 50
 			}
-			params.Set("page", "0")
-			fullURL := tnBaseURL + "/publicaties?" + params.Encode()
-			// PATCH: check error from http.NewRequestWithContext; discarding it left req=nil → panic on Header.Set
-			req, err := http.NewRequestWithContext(cmd.Context(), http.MethodGet, fullURL, nil)
-			if err != nil {
-				return fmt.Errorf("building request: %w", err)
-			}
-			req.Header.Set("Accept", "application/json")
-			resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode/100 != 2 {
-				return fmt.Errorf("HTTP %d", resp.StatusCode)
-			}
-			var body struct {
-				Content       []json.RawMessage `json:"content"`
-				TotalElements int               `json:"totalElements"`
-			}
-			if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-				return err
-			}
+			params.Set("size", fmt.Sprintf("%d", pageSize))
+
+			// PATCH: walk all pages until either (a) the API reports no more
+			// pages, (b) we cross the cursor (every notice on the page has
+			// publicatieId <= curID — results are date-desc and IDs are
+			// monotonic), or (c) we hit MaxPages as a defensive cap.
+			// The previous single-page fetch silently dropped notices
+			// when the day's volume exceeded `size`.
 			fresh := []json.RawMessage{}
 			maxID := curID
-			for _, raw := range body.Content {
-				var v struct {
-					ID json.Number `json:"publicatieId"`
+			const maxPages = 200 // hard cap to keep one run bounded
+		pageLoop:
+			for page := 0; page < maxPages; page++ {
+				params.Set("page", fmt.Sprintf("%d", page))
+				fullURL := tnBaseURL + "/publicaties?" + params.Encode()
+				req, err := http.NewRequestWithContext(cmd.Context(), http.MethodGet, fullURL, nil)
+				if err != nil {
+					return fmt.Errorf("building request: %w", err)
 				}
-				_ = json.Unmarshal(raw, &v)
-				rid, _ := v.ID.Int64()
-				if rid > curID {
-					fresh = append(fresh, raw)
-					if rid > maxID {
-						maxID = rid
+				req.Header.Set("Accept", "application/json")
+				resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
+				if err != nil {
+					return err
+				}
+				body := struct {
+					Content       []json.RawMessage `json:"content"`
+					TotalElements int               `json:"totalElements"`
+					TotalPages    int               `json:"totalPages"`
+					Last          bool              `json:"last"`
+				}{}
+				derr := json.NewDecoder(resp.Body).Decode(&body)
+				resp.Body.Close()
+				if resp.StatusCode/100 != 2 {
+					return fmt.Errorf("HTTP %d on page %d", resp.StatusCode, page)
+				}
+				if derr != nil {
+					return derr
+				}
+				if len(body.Content) == 0 {
+					break pageLoop
+				}
+				pageHadNew := false
+				for _, raw := range body.Content {
+					var v struct {
+						ID json.Number `json:"publicatieId"`
 					}
+					_ = json.Unmarshal(raw, &v)
+					rid, _ := v.ID.Int64()
+					if rid > curID {
+						fresh = append(fresh, raw)
+						pageHadNew = true
+						if rid > maxID {
+							maxID = rid
+						}
+					}
+				}
+				// Stop when we've already crossed the cursor (no new IDs on
+				// this page means every subsequent page is also below curID),
+				// or when the API marks this as the last page.
+				if !pageHadNew || body.Last || page+1 >= body.TotalPages {
+					break pageLoop
 				}
 			}
 			latestCursor := fmt.Sprintf("%d", maxID)

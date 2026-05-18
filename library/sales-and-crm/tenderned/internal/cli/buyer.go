@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -57,12 +58,19 @@ Requires a populated local store. Run 'tenderned-pp-cli sync' first.`,
 				if !strings.Contains(strings.ToLower(n.OpdrachtgeverNaam), needle) {
 					continue
 				}
-				d := n.PublicatieDatum
-				if since != "" && d < since {
-					continue
+				// PATCH: parse publicatieDatum via tnParseDate and compare as
+				// time.Time so sub-second precision and "Z" tz suffix values
+				// inside the window aren't dropped by a raw string compare.
+				pd := tnParseDate(n.PublicatieDatum)
+				if since != "" {
+					if sinceT := tnParseDate(since); !sinceT.IsZero() && !pd.IsZero() && pd.Before(sinceT) {
+						continue
+					}
 				}
-				if until != "" && d > until+"T23:59:59" {
-					continue
+				if until != "" {
+					if untilT := tnParseDate(until); !untilT.IsZero() && !pd.IsZero() && pd.After(untilT.Add(24*time.Hour-time.Nanosecond)) {
+						continue
+					}
 				}
 				filtered = append(filtered, n)
 			}

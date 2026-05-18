@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -51,12 +52,21 @@ both commands are intentionally named the same so the two CLIs feel parallel.`,
 				if !tnHasCPV(n, cpvList) {
 					continue
 				}
-				d := n.PublicatieDatum
-				if since != "" && d < since {
-					continue
+				// PATCH: parse publicatieDatum via tnParseDate and compare as
+				// time.Time. Raw string compare like `d > until+"T23:59:59"`
+				// drops values with sub-second precision ("2026-05-18T23:59:59.000001")
+				// or a "Z" tz suffix that are lexicographically > the boundary
+				// but logically within the window.
+				pd := tnParseDate(n.PublicatieDatum)
+				if since != "" {
+					if sinceT := tnParseDate(since); !sinceT.IsZero() && !pd.IsZero() && pd.Before(sinceT) {
+						continue
+					}
 				}
-				if until != "" && d > until+"T23:59:59" {
-					continue
+				if until != "" {
+					if untilT := tnParseDate(until); !untilT.IsZero() && !pd.IsZero() && pd.After(untilT.Add(24*time.Hour-time.Nanosecond)) {
+						continue
+					}
 				}
 				// Value-cap filter — most TenderNed JSON responses don't carry
 				// the contract value directly; treat maxValue as informational

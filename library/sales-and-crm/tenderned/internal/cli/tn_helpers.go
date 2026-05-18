@@ -178,9 +178,15 @@ func tnParseDate(s string) time.Time {
 	if s == "" {
 		return time.Time{}
 	}
+	// PATCH: time.RFC3339Nano covers fractional-second timestamps that
+	// also carry a "Z" / offset suffix ("2026-05-17T10:30:00.123456Z").
+	// The earlier list had ".999999" (no tz) and time.RFC3339 (no fraction)
+	// but not the combination, so such values fell through all layouts and
+	// the notice was silently dropped in every time-filtered command.
 	for _, layout := range []string{
 		"2006-01-02T15:04:05.999999",
 		"2006-01-02T15:04:05",
+		time.RFC3339Nano,
 		time.RFC3339,
 		"2006-01-02",
 	} {

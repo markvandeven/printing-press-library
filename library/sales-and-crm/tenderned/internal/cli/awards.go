@@ -56,6 +56,7 @@ Mirrors the eu-tenders awards command so the two CLIs can be used in conjunction
 			params.Set("page", "0")
 
 			fullURL := tnBaseURL + "/publicaties?" + params.Encode()
+			// PATCH: check error from http.NewRequestWithContext; discarding it left req=nil → panic on Header.Set
 			req, err := http.NewRequestWithContext(cmd.Context(), http.MethodGet, fullURL, nil)
 			if err != nil {
 				return fmt.Errorf("building request: %w", err)

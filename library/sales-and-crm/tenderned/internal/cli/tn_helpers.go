@@ -112,6 +112,10 @@ type cpvEntry struct {
 // is done in Go rather than SQL so callers never interpolate user input
 // into a query string.
 //
+// PATCH: removed whereClause/args params; the original signature allowed
+// raw SQL concatenation. No caller used it (all passed ""); filtering
+// happens post-load in every command.
+//
 // Emits a one-line stderr hint when the local cache is empty so callers
 // don't silently receive zero-result aggregations and conclude the slice
 // is genuinely empty.

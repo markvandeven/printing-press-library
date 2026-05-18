@@ -125,6 +125,7 @@ type tnDocSummary struct {
 
 func tnFetchDocumentList(ctx context.Context, pubID int64) ([]tnDocSummary, error) {
 	url := fmt.Sprintf("%s/publicaties/%d/documenten", tnBaseURL, pubID)
+	// PATCH: check error from http.NewRequestWithContext; discarding it left req=nil → panic on Header.Set
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("building request: %w", err)
@@ -154,6 +155,7 @@ func tnFetchDocumentList(ctx context.Context, pubID int64) ([]tnDocSummary, erro
 // PDF metadata strings present in the binary).
 func tnFetchDocumentText(ctx context.Context, pubID int64, docID string) (string, error) {
 	url := fmt.Sprintf("%s/publicaties/%d/documenten/%s/content", tnBaseURL, pubID, docID)
+	// PATCH: check error from http.NewRequestWithContext; docID is API-supplied and could yield an invalid URL
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", fmt.Errorf("building request: %w", err)

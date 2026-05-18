@@ -108,19 +108,16 @@ type cpvEntry struct {
 	IsHoofdOpdracht bool   `json:"isHoofdOpdracht"`
 }
 
-// tnLoadNotices runs SELECT id, data FROM resources WHERE resource_type='notices'
-// and decodes each row into a tnNotice. Optional whereClause and args are
-// appended directly (callers control parameterization).
+// tnLoadNotices loads all notices from the local store. Post-load filtering
+// is done in Go rather than SQL so callers never interpolate user input
+// into a query string.
 //
 // Emits a one-line stderr hint when the local cache is empty so callers
 // don't silently receive zero-result aggregations and conclude the slice
 // is genuinely empty.
-func tnLoadNotices(ctx context.Context, s *store.Store, whereClause string, args ...interface{}) ([]tnNotice, error) {
+func tnLoadNotices(ctx context.Context, s *store.Store) ([]tnNotice, error) {
 	q := "SELECT data FROM resources WHERE resource_type IN ('notices','publications')"
-	if strings.TrimSpace(whereClause) != "" {
-		q += " AND " + whereClause
-	}
-	rows, err := s.DB().QueryContext(ctx, q, args...)
+	rows, err := s.DB().QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
 	}

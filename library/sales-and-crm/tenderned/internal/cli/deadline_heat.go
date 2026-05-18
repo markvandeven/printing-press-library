@@ -32,7 +32,7 @@ negotiated=0.4). Higher score = more time-sensitive triage.`,
 				return err
 			}
 			defer s.Close()
-			notices, err := tnLoadNotices(cmd.Context(), s, "")
+			notices, err := tnLoadNotices(cmd.Context(), s)
 			if err != nil {
 				return err
 			}

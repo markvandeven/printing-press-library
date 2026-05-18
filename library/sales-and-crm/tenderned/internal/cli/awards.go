@@ -56,7 +56,10 @@ Mirrors the eu-tenders awards command so the two CLIs can be used in conjunction
 			params.Set("page", "0")
 
 			fullURL := tnBaseURL + "/publicaties?" + params.Encode()
-			req, _ := http.NewRequestWithContext(cmd.Context(), http.MethodGet, fullURL, nil)
+			req, err := http.NewRequestWithContext(cmd.Context(), http.MethodGet, fullURL, nil)
+			if err != nil {
+				return fmt.Errorf("building request: %w", err)
+			}
 			req.Header.Set("Accept", "application/json")
 			hc := &http.Client{Timeout: 30 * time.Second}
 			resp, err := hc.Do(req)

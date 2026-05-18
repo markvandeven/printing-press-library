@@ -32,7 +32,7 @@ by CPV stripe or buyer. Returns the last N weeks (default 12).`,
 				return err
 			}
 			defer s.Close()
-			notices, err := tnLoadNotices(cmd.Context(), s, "")
+			notices, err := tnLoadNotices(cmd.Context(), s)
 			if err != nil {
 				return err
 			}

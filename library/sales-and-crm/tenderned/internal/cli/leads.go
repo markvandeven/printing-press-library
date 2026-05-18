@@ -38,7 +38,7 @@ both commands are intentionally named the same so the two CLIs feel parallel.`,
 				return err
 			}
 			defer s.Close()
-			notices, err := tnLoadNotices(cmd.Context(), s, "")
+			notices, err := tnLoadNotices(cmd.Context(), s)
 			if err != nil {
 				return err
 			}

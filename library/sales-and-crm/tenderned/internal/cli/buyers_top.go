@@ -30,7 +30,7 @@ endpoint. Answers questions like "which buyers are most active in CPV 72 in NUTS
 				return err
 			}
 			defer s.Close()
-			notices, err := tnLoadNotices(cmd.Context(), s, "")
+			notices, err := tnLoadNotices(cmd.Context(), s)
 			if err != nil {
 				return err
 			}

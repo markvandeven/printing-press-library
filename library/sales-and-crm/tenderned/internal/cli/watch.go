@@ -222,7 +222,10 @@ func newWatchRunCmd(flags *rootFlags) *cobra.Command {
 			}
 			params.Set("page", "0")
 			fullURL := tnBaseURL + "/publicaties?" + params.Encode()
-			req, _ := http.NewRequestWithContext(cmd.Context(), http.MethodGet, fullURL, nil)
+			req, err := http.NewRequestWithContext(cmd.Context(), http.MethodGet, fullURL, nil)
+			if err != nil {
+				return fmt.Errorf("building request: %w", err)
+			}
 			req.Header.Set("Accept", "application/json")
 			resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 			if err != nil {

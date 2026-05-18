@@ -50,7 +50,7 @@ is fetched live from TenderNed.`,
 				return err
 			}
 			defer s.Close()
-			notices, err := tnLoadNotices(cmd.Context(), s, "")
+			notices, err := tnLoadNotices(cmd.Context(), s)
 			if err != nil {
 				return err
 			}
@@ -125,7 +125,10 @@ type tnDocSummary struct {
 
 func tnFetchDocumentList(ctx context.Context, pubID int64) ([]tnDocSummary, error) {
 	url := fmt.Sprintf("%s/publicaties/%d/documenten", tnBaseURL, pubID)
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("building request: %w", err)
+	}
 	req.Header.Set("Accept", "application/json")
 	resp, err := (&http.Client{Timeout: 15 * time.Second}).Do(req)
 	if err != nil {
@@ -151,7 +154,10 @@ func tnFetchDocumentList(ctx context.Context, pubID int64) ([]tnDocSummary, erro
 // PDF metadata strings present in the binary).
 func tnFetchDocumentText(ctx context.Context, pubID int64, docID string) (string, error) {
 	url := fmt.Sprintf("%s/publicaties/%d/documenten/%s/content", tnBaseURL, pubID, docID)
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("building request: %w", err)
+	}
 	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 	if err != nil {
 		return "", err

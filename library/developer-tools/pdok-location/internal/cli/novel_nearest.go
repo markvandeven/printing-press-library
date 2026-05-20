@@ -33,8 +33,13 @@ func newNearestCmd(flags *rootFlags) *cobra.Command {
 			if dryRunOK(flags) {
 				return nil
 			}
-			haveLL := cmd.Flags().Changed("lat") || cmd.Flags().Changed("lon")
-			haveRD := cmd.Flags().Changed("rd-x") || cmd.Flags().Changed("rd-y")
+			haveLL := cmd.Flags().Changed("lat") && cmd.Flags().Changed("lon")
+			haveRD := cmd.Flags().Changed("rd-x") && cmd.Flags().Changed("rd-y")
+			partialLL := cmd.Flags().Changed("lat") != cmd.Flags().Changed("lon")
+			partialRD := cmd.Flags().Changed("rd-x") != cmd.Flags().Changed("rd-y")
+			if partialLL || partialRD {
+				return usageErr(fmt.Errorf("both --lat and --lon are required (or both --rd-x and --rd-y)"))
+			}
 			if !haveLL && !haveRD {
 				return cmd.Help()
 			}

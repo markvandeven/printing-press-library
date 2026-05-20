@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -83,8 +84,14 @@ func newFeaturesSearchCmd(flags *rootFlags) *cobra.Command {
 				}
 			}
 			if bbox != "" {
-				if parts := strings.Split(bbox, ","); len(parts) != 4 {
+				parts := strings.Split(bbox, ",")
+				if len(parts) != 4 {
 					return usageErr(fmt.Errorf("--bbox must be 'minlon,minlat,maxlon,maxlat' (got %q)", bbox))
+				}
+				for _, p := range parts {
+					if _, err := strconv.ParseFloat(strings.TrimSpace(p), 64); err != nil {
+						return usageErr(fmt.Errorf("--bbox values must be numbers: %q is not a valid float", strings.TrimSpace(p)))
+					}
 				}
 			}
 			if limit < 1 {

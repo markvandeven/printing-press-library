@@ -164,14 +164,12 @@ func newGemeenteListCmd(flags *rootFlags) *cobra.Command {
 func newGemeenteOfPointCmd(flags *rootFlags) *cobra.Command {
 	var lat, lon float64
 	var rdX, rdY float64
-	var dbPath string
 	cmd := &cobra.Command{
 		Use:   "of-point",
 		Short: "Return the gemeente containing a given point",
 		Long: "Given any lat/lon (WGS84) or RD x/y, return which gemeente (and " +
-			"provincie) contains the point. Uses the local gemeente centroids " +
-			"as a fast first pass; falls back to Locatieserver `/reverse` for " +
-			"definitive containment when the closest centroid is ambiguous.",
+			"provincie) contains the point. Calls Locatieserver `/reverse` with " +
+			"type=gemeente to find the enclosing municipality.",
 		Example: "  pdok-location-pp-cli gemeente of-point --lat 52.3731 --lon 4.8922 --json\n" +
 			"  pdok-location-pp-cli gemeente of-point --rd-x 121200 --rd-y 488000",
 		Annotations: map[string]string{"mcp:read-only": "true"},
@@ -179,8 +177,13 @@ func newGemeenteOfPointCmd(flags *rootFlags) *cobra.Command {
 			if dryRunOK(flags) {
 				return nil
 			}
-			haveLL := cmd.Flags().Changed("lat") || cmd.Flags().Changed("lon")
-			haveRD := cmd.Flags().Changed("rd-x") || cmd.Flags().Changed("rd-y")
+			haveLL := cmd.Flags().Changed("lat") && cmd.Flags().Changed("lon")
+			haveRD := cmd.Flags().Changed("rd-x") && cmd.Flags().Changed("rd-y")
+			partialLL := cmd.Flags().Changed("lat") != cmd.Flags().Changed("lon")
+			partialRD := cmd.Flags().Changed("rd-x") != cmd.Flags().Changed("rd-y")
+			if partialLL || partialRD {
+				return usageErr(fmt.Errorf("both --lat and --lon are required (or both --rd-x and --rd-y)"))
+			}
 			if !haveLL && !haveRD {
 				return cmd.Help()
 			}
@@ -228,7 +231,6 @@ func newGemeenteOfPointCmd(flags *rootFlags) *cobra.Command {
 	cmd.Flags().Float64Var(&lon, "lon", 0, "WGS84 longitude")
 	cmd.Flags().Float64Var(&rdX, "rd-x", 0, "RD X coordinate")
 	cmd.Flags().Float64Var(&rdY, "rd-y", 0, "RD Y coordinate")
-	cmd.Flags().StringVar(&dbPath, "db", "", "SQLite database path")
 	return cmd
 }
 

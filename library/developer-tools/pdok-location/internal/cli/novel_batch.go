@@ -109,7 +109,6 @@ func newBatchGeocodeCmd(flags *rootFlags) *cobra.Command {
 				w = f
 			}
 			cw := csv.NewWriter(w)
-			defer cw.Flush()
 			newHeader := append([]string{}, header...)
 			newHeader = append(newHeader, "lat", "lon", "rd_x", "rd_y", "score", "match_type", "match_id", "error")
 			if err := cw.Write(newHeader); err != nil {
@@ -178,8 +177,10 @@ func newBatchGeocodeCmd(flags *rootFlags) *cobra.Command {
 							continue
 						}
 						doc := enrichLSDoc(resp.Response.Docs[0], false)
-						if doc.Score < minScore {
+						if minScore > 0 && doc.Score < minScore {
 							extra[7] = fmt.Sprintf("score %.2f below %.2f", doc.Score, minScore)
+							results <- result{j.idx, append(append([]string{}, j.row...), extra...)}
+							continue
 						}
 						if doc.CentroideLL != nil {
 							extra[0] = strconv.FormatFloat(doc.CentroideLL.Lat, 'f', -1, 64)
@@ -240,6 +241,9 @@ func newBatchGeocodeCmd(flags *rootFlags) *cobra.Command {
 				}
 			}
 			cw.Flush()
+			if err := cw.Error(); err != nil {
+				return err
+			}
 			fmt.Fprintf(os.Stderr, "geocoded %d rows, %d errors\n", len(rows), gotErrors)
 			return nil
 		},

@@ -143,8 +143,13 @@ func newBatchGeocodeCmd(flags *rootFlags) *cobra.Command {
 				go func() {
 					defer wg.Done()
 					for j := range jobs {
-						addr := strings.TrimSpace(j.row[addrIdx])
 						extra := make([]string, 8)
+						if addrIdx >= len(j.row) {
+							extra[7] = fmt.Sprintf("row has %d columns, address column index %d out of range", len(j.row), addrIdx)
+							results <- result{j.idx, append(append([]string{}, j.row...), extra...)}
+							continue
+						}
+						addr := strings.TrimSpace(j.row[addrIdx])
 						if addr == "" {
 							extra[7] = "blank address"
 							results <- result{j.idx, append(append([]string{}, j.row...), extra...)}

@@ -235,7 +235,6 @@ func writeBboxCSV(w io.Writer, items []bboxFeature) error {
 	}
 	sort.Strings(colNames)
 	cw := csv.NewWriter(w)
-	defer cw.Flush()
 	header := append([]string{"collection", "id"}, colNames...)
 	if err := cw.Write(header); err != nil {
 		return err
@@ -263,5 +262,6 @@ func writeBboxCSV(w io.Writer, items []bboxFeature) error {
 			return err
 		}
 	}
-	return nil
+	cw.Flush()
+	return cw.Error()
 }

@@ -1,7 +1,7 @@
 ---
 name: pp-tenderned
 description: "Dutch public-tender CLI with offline search, document corpus, and the sub-threshold long tail TED never sees."
-author: "Mark van de Ven"
+author: "markvandeven"
 license: "Apache-2.0"
 argument-hint: "<command> [args] | install cli|mcp"
 allowed-tools: "Read Bash"

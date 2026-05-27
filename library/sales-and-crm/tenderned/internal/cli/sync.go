@@ -804,8 +804,15 @@ func extractItemsByKnownKeys(envelope map[string]json.RawMessage) ([]json.RawMes
 
 func extractSingleObjectArraySibling(envelope map[string]json.RawMessage) ([]json.RawMessage, bool) {
 	// Fallback: try every key in the envelope. If exactly one maps to a JSON
-	// array with items, use it. This handles APIs that wrap responses with the
-	// resource name (e.g., {"markets": [...], "cursor": "..."}).
+	// array of objects, use it. This handles APIs that wrap responses with
+	// the resource name (e.g., {"markets": [...], "cursor": "..."}).
+	//
+	// Unknown scalar siblings (timestamps like "generated_at", correlation
+	// IDs like "request_id", version stamps like "api_version") are skipped,
+	// not treated as disqualifying — many real envelopes carry such fields
+	// alongside the data array. The function only returns false when the
+	// envelope has zero qualifying arrays or is ambiguous (2+ object arrays
+	// without a clear winner).
 	var arrayItems []json.RawMessage
 	arrayCount := 0
 	for key, raw := range envelope {
@@ -815,14 +822,6 @@ func extractSingleObjectArraySibling(envelope map[string]json.RawMessage) ([]jso
 		if candidate, ok := extractObjectArray(raw); ok {
 			arrayItems = candidate
 			arrayCount++
-			continue
-		}
-		var rawArray []json.RawMessage
-		if json.Unmarshal(raw, &rawArray) == nil && !isJSONNull(raw) {
-			continue
-		}
-		if !pageEnvelopeMetadataKeys[key] {
-			return nil, false
 		}
 	}
 	if arrayCount == 1 {

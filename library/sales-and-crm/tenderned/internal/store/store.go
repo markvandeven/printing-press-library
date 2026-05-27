@@ -42,7 +42,13 @@ func IsUUID(s string) bool {
 // StoreSchemaVersion is the on-disk schema version this binary understands.
 // It is stamped into SQLite's PRAGMA user_version on fresh databases and
 // checked on every open. Non-learn CLIs stay at v2.
-const StoreSchemaVersion = 2
+// StoreSchemaVersion tracks on-disk schema state. Bumped to 3 when
+// ftsRowID's hash changed from polynomial to FNV-64a in press 4.18.1:
+// existing v2 databases retain FTS rows under the old hash, so DELETE
+// WHERE rowid=? with the new hash never matches and INSERT leaves a
+// ghost. The v2→v3 migration drops and rebuilds resources_fts under
+// the new hash, mirroring the v1→v2 rebuild for the same kind of break.
+const StoreSchemaVersion = 3
 
 const resourcesFTSCreateSQL = `CREATE VIRTUAL TABLE IF NOT EXISTS resources_fts USING fts5(
 	id, resource_type, content, tokenize='porter unicode61'
@@ -324,6 +330,16 @@ func (s *Store) migrate(ctx context.Context) error {
 			}
 		}
 
+		// v2→v3: ftsRowID switched from polynomial to FNV-64a between press
+		// versions; existing v2 FTS rows are unreachable by the new DELETE
+		// WHERE rowid=? path. Drop and rebuild. Skipped on v1 DBs because
+		// the v1→v2 path above already rebuilds the FTS table.
+		if current == 2 {
+			if err := migrateRehashResourcesFTS(ctx, conn); err != nil {
+				return fmt.Errorf("rehashing resources_fts: %w", err)
+			}
+		}
+
 		if err := s.backfillColumns(ctx, conn); err != nil {
 			return fmt.Errorf("backfilling columns: %w", err)
 		}
@@ -429,6 +445,22 @@ func resourcesTableHasCompositeKey(ctx context.Context, conn *sql.Conn) (bool, e
 		return false, fmt.Errorf("reading resources table info rows: %w", err)
 	}
 	return pk["resource_type"] == 1 && pk["id"] == 2, nil
+}
+
+// migrateRehashResourcesFTS drops resources_fts and rebuilds it under the
+// current ftsRowID hash function. Called by the v2→v3 path; safe to call
+// against any schema state because DROP IF EXISTS + recreate is idempotent.
+func migrateRehashResourcesFTS(ctx context.Context, conn *sql.Conn) error {
+	if _, err := conn.ExecContext(ctx, `DROP TABLE IF EXISTS resources_fts`); err != nil {
+		return fmt.Errorf("dropping resources_fts: %w", err)
+	}
+	if _, err := conn.ExecContext(ctx, resourcesFTSCreateSQL); err != nil {
+		return fmt.Errorf("creating resources_fts: %w", err)
+	}
+	if err := rebuildResourcesFTS(ctx, conn); err != nil {
+		return fmt.Errorf("rebuilding resources_fts: %w", err)
+	}
+	return nil
 }
 
 func rebuildResourcesFTS(ctx context.Context, conn *sql.Conn) error {

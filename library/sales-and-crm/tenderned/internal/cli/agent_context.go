@@ -116,7 +116,7 @@ func buildAgentContext(rootCmd *cobra.Command) agentContext {
 		SchemaVersion: agentContextSchemaVersion,
 		CLI: agentContextCLI{
 			Name:        "tenderned-pp-cli",
-			Description: "Every Dutch public tender, with the sub-threshold long tail that EU TED never sees, in a local-first CLI you can pipe.",
+			Description: "Dutch public-tender CLI with offline search, document corpus, and the sub-threshold long tail TED never sees.",
 			Version:     rootCmd.Version,
 		},
 		Auth: agentContextAuth{

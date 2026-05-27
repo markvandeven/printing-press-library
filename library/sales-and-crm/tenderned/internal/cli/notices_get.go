@@ -30,7 +30,7 @@ func newNoticesGetCmd(flags *rootFlags) *cobra.Command {
 			path := "/publicaties/{publicatieId}"
 			path = replacePathParam(path, "publicatieId", args[0])
 			params := map[string]string{}
-			data, prov, err := resolveRead(cmd.Context(), c, flags, "notices", false, path, params, nil)
+			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "notices", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}

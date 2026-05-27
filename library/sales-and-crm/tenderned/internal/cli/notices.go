@@ -9,9 +9,10 @@ import (
 
 func newNoticesCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "notices",
-		Short: "Search, list and fetch tender notices (aankondigingen) from TenderNed — mirrors 'eu-tenders notices' for the Dutch...",
-		RunE:  parentNoSubcommandRunE(flags),
+		Use:         "notices",
+		Short:       "Search, list and fetch tender notices (aankondigingen)",
+		Annotations: map[string]string{"mcp:read-only": "true"},
+		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newNoticesGetCmd(flags))

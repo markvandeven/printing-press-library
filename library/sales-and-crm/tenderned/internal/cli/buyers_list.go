@@ -28,10 +28,10 @@ func newBuyersListCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/aanbestedendediensten"
-			data, prov, err := resolvePaginatedRead(cmd.Context(), c, flags, "buyers", path, map[string]string{
+			data, prov, err := resolvePaginatedReadWithStrategy(cmd.Context(), c, flags, "auto", "buyers", path, map[string]string{
 				"page": fmt.Sprintf("%v", flagPage),
 				"size": fmt.Sprintf("%v", flagSize),
-			}, nil, flagAll, "page", "", "last")
+			}, nil, flagAll, "page", "page", "size", "", "last", cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}

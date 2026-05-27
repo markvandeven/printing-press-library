@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mvanhorn/printing-press-library/library/sales-and-crm/tenderned/internal/store"
 	"github.com/spf13/cobra"
+	"github.com/mvanhorn/printing-press-library/library/sales-and-crm/tenderned/internal/store"
 )
 
 // isNilOrEmpty checks whether a JSON object has nil or empty values for
@@ -129,6 +129,8 @@ In local mode: searches locally synced data only.`,
 				return fmt.Errorf("opening local database: %w\nRun 'tenderned-pp-cli sync' first to populate the local database.", err)
 			}
 			defer db.Close()
+
+			maybeEmitSyncHints(cmd, db, resourceType, flags.maxAge)
 
 			var results []json.RawMessage
 			switch resourceType {

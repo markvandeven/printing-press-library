@@ -9,13 +9,13 @@ import (
 
 func newBuyersCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "buyers",
-		Short: "Browse contracting authorities (aanbestedende diensten) — Dutch public buyers",
-		RunE:  parentNoSubcommandRunE(flags),
+		Use:         "buyers",
+		Short:       "Browse contracting authorities (aanbestedende diensten) — Dutch public buyers",
+		Annotations: map[string]string{"mcp:read-only": "true"},
+		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newBuyersGetCmd(flags))
 	cmd.AddCommand(newBuyersListCmd(flags))
-	cmd.AddCommand(newBuyersTopCmd(flags))
 	return cmd
 }

@@ -90,9 +90,16 @@ func New(cfg *config.Config, timeout time.Duration, rateLimit float64) *Client {
 			}
 		} else {
 			// Cross-host hop: Go strips standard auth headers (Authorization,
-			// Cookie) but not custom ones, so a custom API-key header would be
-			// forwarded verbatim to the redirect target. Delete it explicitly.
+			// Cookie) but not custom ones, so any user-configured credential
+			// header (e.g. X-API-Key, X-Auth-Token) would be forwarded verbatim
+			// to the redirect target. Strip Authorization plus every header the
+			// user set via Config.Headers.
 			req.Header.Del("Authorization")
+			if c.Config != nil {
+				for k := range c.Config.Headers {
+					req.Header.Del(k)
+				}
+			}
 		}
 		return nil
 	}

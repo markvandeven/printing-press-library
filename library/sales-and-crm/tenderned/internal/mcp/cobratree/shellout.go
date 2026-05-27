@@ -99,27 +99,85 @@ func cliArgsFromMCP(args map[string]any) []string {
 	return out
 }
 
-// SplitShellArgs whitespace-splits with double-quoted-token preservation.
+// SplitShellArgs tokenizes a POSIX-style argument string: whitespace separates
+// tokens; single quotes preserve their contents literally (no escape
+// interpretation); double quotes preserve contents and interpret a limited set
+// of backslash escapes (\, ", $, `); outside quotes, a backslash escapes the
+// next byte. Unterminated quotes consume to end-of-string, matching how most
+// shells produce an incomplete token rather than rejecting the input.
 func SplitShellArgs(s string) []string {
-	var tokens []string
-	var cur []rune
-	inQuote := false
-	for _, r := range s {
-		switch {
-		case r == '"':
-			inQuote = !inQuote
-		case (r == ' ' || r == '\t') && !inQuote:
-			if len(cur) > 0 {
-				tokens = append(tokens, string(cur))
-				cur = cur[:0]
-			}
-		default:
-			cur = append(cur, r)
+	const (
+		stateNormal = iota
+		stateDouble
+		stateSingle
+	)
+	var (
+		tokens  []string
+		cur     []rune
+		state   = stateNormal
+		started bool // distinguishes "" (empty token from "" or '') from no token at all
+	)
+	runes := []rune(s)
+	flush := func() {
+		if started {
+			tokens = append(tokens, string(cur))
+			cur = cur[:0]
+			started = false
 		}
 	}
-	if len(cur) > 0 {
-		tokens = append(tokens, string(cur))
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		switch state {
+		case stateNormal:
+			switch r {
+			case '"':
+				state = stateDouble
+				started = true
+			case '\'':
+				state = stateSingle
+				started = true
+			case '\\':
+				if i+1 < len(runes) {
+					i++
+					cur = append(cur, runes[i])
+					started = true
+				}
+			case ' ', '\t':
+				flush()
+			default:
+				cur = append(cur, r)
+				started = true
+			}
+		case stateDouble:
+			switch r {
+			case '"':
+				state = stateNormal
+			case '\\':
+				if i+1 < len(runes) {
+					next := runes[i+1]
+					// POSIX: backslash inside double quotes is literal except
+					// before " \ $ ` (and newline, which we don't see here).
+					if next == '"' || next == '\\' || next == '$' || next == '`' {
+						i++
+						cur = append(cur, next)
+					} else {
+						cur = append(cur, r)
+					}
+				} else {
+					cur = append(cur, r)
+				}
+			default:
+				cur = append(cur, r)
+			}
+		case stateSingle:
+			if r == '\'' {
+				state = stateNormal
+			} else {
+				cur = append(cur, r)
+			}
+		}
 	}
+	flush()
 	return tokens
 }
 

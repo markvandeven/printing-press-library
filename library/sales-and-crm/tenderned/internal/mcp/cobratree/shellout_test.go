@@ -29,6 +29,23 @@ func TestSplitShellArgs(t *testing.T) {
 		{"tabs", "foo\tbar", []string{"foo", "bar"}},
 		{"quoted token", `"hello world"`, []string{"hello world"}},
 		{"mixed quoted and bare", `contacts "john doe" active`, []string{"contacts", "john doe", "active"}},
+		// Single-quote handling — POSIX literal: no escape interpretation inside.
+		{"single quoted token", `'hello world'`, []string{"hello world"}},
+		{"single quotes preserve dollar", `'$HOME'`, []string{"$HOME"}},
+		{"single quotes preserve backslash literally", `'a\b'`, []string{`a\b`}},
+		{"single quotes preserve double quote inside", `'he said "hi"'`, []string{`he said "hi"`}},
+		// Backslash escaping outside quotes.
+		{"escaped space outside quotes", `foo\ bar`, []string{"foo bar"}},
+		{"escaped quote outside quotes", `foo\"bar`, []string{`foo"bar`}},
+		{"escaped backslash outside quotes", `foo\\bar`, []string{`foo\bar`}},
+		// Backslash inside double quotes — POSIX selective.
+		{"double quotes escape inner quote", `"say \"hi\""`, []string{`say "hi"`}},
+		{"double quotes leave non-special backslash literal", `"a\b"`, []string{`a\b`}},
+		// Mixed quote styles within a single token glue together.
+		{"adjacent quoted spans merge", `'foo'"bar"baz`, []string{"foobarbaz"}},
+		// Empty quoted token is still a token (distinct from "no token").
+		{"empty single-quoted token", `a '' b`, []string{"a", "", "b"}},
+		{"empty double-quoted token", `a "" b`, []string{"a", "", "b"}},
 	}
 	for _, tc := range cases {
 		tc := tc

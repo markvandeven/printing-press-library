@@ -413,6 +413,12 @@ func syncResource(ctx context.Context, c interface {
 	var progressCount int64
 	pagesFetched := 0
 	lastNextCursor := ""
+	// capExitHit signals that the loop exited because of the --max-pages
+	// ceiling rather than natural completion. capExitCursor carries the
+	// resume position computed at cap-exit time so the post-loop final
+	// SaveSyncState can preserve it instead of clearing the cursor.
+	capExitHit := false
+	capExitCursor := ""
 	// extractFailureTotal accumulates per-item primary-key extraction
 	// misses across pages within this resource sync. Resource-level
 	// concurrency is 1 (one goroutine per resource via the work channel)
@@ -588,6 +594,24 @@ func syncResource(ctx context.Context, c interface {
 					fmt.Fprintf(syncEvents, `{"event":"sync_warning","resource":"%s","reason":"max_pages_cap_hit","message":"reached --max-pages cap of %d; data may be truncated. Re-run with --max-pages 0 (unlimited) or higher to verify."}`+"\n", resource, maxPages)
 				}
 			}
+			// Compute the resume position so the post-loop final SaveSyncState
+			// can preserve it instead of clearing the cursor. Prefer the
+			// API-reported nextCursor (parsed earlier this iteration). Fall
+			// back to a locally-computed offset for offset-based paginators;
+			// fall back to the cursor we just used otherwise — the latter
+			// makes resume re-fetch the cap iteration (idempotent via upsert)
+			// rather than restart from page 1.
+			capExitHit = true
+			capExitCursor = nextCursor
+			if capExitCursor == "" {
+				if pageSize.cursorParam == "offset" {
+					if off, err := strconv.Atoi(cursor); err == nil {
+						capExitCursor = strconv.Itoa(off + pageSize.limit)
+					}
+				} else {
+					capExitCursor = cursor
+				}
+			}
 			break
 		}
 
@@ -636,8 +660,16 @@ func syncResource(ctx context.Context, c interface {
 		cursor = nextCursor
 	}
 
-	// Final sync state: clear cursor (sync is complete), update count
-	_ = db.SaveSyncState(resource, "", totalCount)
+	// Final sync state: on natural completion clear the cursor (sync is
+	// complete); on --max-pages cap-exit preserve the resume cursor so the
+	// next budget-controlled run picks up at the next page instead of
+	// restarting from page 1. Either way, bump totalCount to include the
+	// items consumed in the final iteration.
+	finalCursor := ""
+	if capExitHit {
+		finalCursor = capExitCursor
+	}
+	_ = db.SaveSyncState(resource, finalCursor, totalCount)
 
 	// F4b symptom probe: if items were consumed and successfully
 	// extracted (extractFailures < consumed) but nothing landed in

@@ -45,7 +45,8 @@ can consume directly.`,
 			if _, err := rechtspraak.ParseECLI(rootECLI); err != nil {
 				return err
 			}
-			ctx := cmd.Context()
+			ctx, cancel := boundCtx(cmd.Context(), flags)
+			defer cancel()
 			http := mustHTTP()
 			visited := map[string]bool{}
 			tree, err := walkChain(ctx, http, rootECLI, flagDepth, flagDirection, visited)

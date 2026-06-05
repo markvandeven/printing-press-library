@@ -88,10 +88,19 @@ narrowing happens for long-tail Dutch legal terms.
 				}
 				regexes = append(regexes, re)
 			}
-			ctx := cmd.Context()
+			ctx, cancel := boundCtx(cmd.Context(), flags)
+			defer cancel()
 			http := mustHTTP()
 			survivors := make([]string, 0, len(eclis))
 			for _, ecli := range eclis {
+				// Honour context cancellation before each potentially
+				// expensive HTTP call so --timeout / Ctrl-C / agent
+				// deadline doesn't silently truncate the result set as
+				// "false" survivors.
+				if err := ctx.Err(); err != nil {
+					fmt.Fprintf(cmd.ErrOrStderr(), "narrow: scan interrupted (%v); %d of %d ECLIs processed.\n", err, len(survivors), len(eclis))
+					return err
+				}
 				ok, err := narrowMatch(ctx, http, ecli, flagKeyword, flagExclude, flagPhrase, regexes, flagSummary, flagFull)
 				if err != nil {
 					if flagAnnotate {

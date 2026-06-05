@@ -38,7 +38,8 @@ summary + body).`,
 			if err != nil {
 				return err
 			}
-			ctx := cmd.Context()
+			ctx, cancel := boundCtx(cmd.Context(), flags)
+			defer cancel()
 			http := mustHTTP()
 			d, err := http.Get(ctx, ecli, false)
 			if err != nil {

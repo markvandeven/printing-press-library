@@ -219,3 +219,19 @@ func shouldEmitJSON(w io.Writer, flags *rootFlags) bool {
 	}
 	return false
 }
+
+// boundCtx returns a context derived from parent, bounded by the
+// rootFlags --timeout if it is positive. Hand-written novel commands
+// (chain, citations, dossier, narrow, watch, uitspraken search) make many
+// sequential HTTP calls through the typed rechtspraak.HTTP client rather
+// than through the generic internal/client (which already consumes
+// flags.timeout). Without this helper, --timeout silently does nothing on
+// those commands — the contract advertised in --help is not honoured. The
+// helper always returns a non-nil cancel func so callers can `defer cancel()`
+// unconditionally without nil checks.
+func boundCtx(parent context.Context, flags *rootFlags) (context.Context, context.CancelFunc) {
+	if flags == nil || flags.timeout <= 0 {
+		return parent, func() {}
+	}
+	return context.WithTimeout(parent, flags.timeout)
+}

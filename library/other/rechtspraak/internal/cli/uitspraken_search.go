@@ -74,7 +74,8 @@ across the full body with --scan-body.`,
 			if dryRunOK(flags) {
 				return nil
 			}
-			ctx := cmd.Context()
+			ctx, cancel := boundCtx(cmd.Context(), flags)
+			defer cancel()
 			courtIdx, err := getCourtIndex(ctx)
 			if err != nil {
 				return err

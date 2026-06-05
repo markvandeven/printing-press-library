@@ -37,7 +37,8 @@ footnotes), CSV (for spreadsheets), or plain text.`,
 			if _, err := rechtspraak.ParseECLI(ecli); err != nil {
 				return err
 			}
-			ctx := cmd.Context()
+			ctx, cancel := boundCtx(cmd.Context(), flags)
+			defer cancel()
 			d, err := mustHTTP().Get(ctx, ecli, false)
 			if err != nil {
 				return err

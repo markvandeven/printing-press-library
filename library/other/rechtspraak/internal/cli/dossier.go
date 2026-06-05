@@ -43,7 +43,8 @@ Provide --court to restrict to a single court (much faster) or --from /
 			if !looksLikeZaaknummer(zaak) {
 				return fmt.Errorf("invalid zaaknummer %q: expected a case-file identifier such as 22/00155, AMS-21-006186, or 99-1491 (must contain at least one digit and one separator or be alphanumeric and >= 3 chars)", zaak)
 			}
-			ctx := cmd.Context()
+			ctx, cancel := boundCtx(cmd.Context(), flags)
+			defer cancel()
 			http := mustHTTP()
 			courtIdx, err := getCourtIndex(ctx)
 			if err != nil {
@@ -80,9 +81,16 @@ Provide --court to restrict to a single court (much faster) or --from /
 					"dossier: scanned %d candidate ECLIs (page ceiling) without finishing the window — narrow with --court or --from/--to for a complete result\n",
 					totalSeen)
 			}
-			matches, err := collectDossierMatches(ctx, http, entries, zaak, flagLimit)
-			if err != nil {
-				return err
+			matches, scanErr := collectDossierMatches(ctx, http, entries, zaak, flagLimit)
+			if scanErr != nil {
+				// Context cancellation (--timeout, Ctrl-C, agent deadline)
+				// returns partial results plus the context error. Warn the
+				// user that the result set is incomplete BEFORE returning,
+				// so an agent piping --json output gets both the partial
+				// set on stdout (next branch) AND the typed error
+				// surfaced as a non-zero exit.
+				fmt.Fprintf(cmd.ErrOrStderr(), "dossier: scan interrupted (%v); partial result has %d match(es). Re-run with a wider --timeout to complete.\n", scanErr, len(matches))
+				return scanErr
 			}
 			sort.SliceStable(matches, func(i, j int) bool {
 				return matches[i].DecisionDate < matches[j].DecisionDate
@@ -181,16 +189,34 @@ func paginateDossier(ctx context.Context, http *rechtspraak.HTTP, base rechtspra
 // dropped because the Atom title formats zaaknummer differently across
 // instances ("22/00155" vs "22 / 00155" vs "22-00155") and was producing
 // false negatives. The cost (one content fetch per candidate) is bounded
-// by the page hard cap upstream.
+// by the page hard cap upstream and by ctx (--timeout / Ctrl-C / agent
+// deadline). On context cancellation the function returns whatever it
+// found so far together with the context error — callers MUST distinguish
+// nil from non-nil to know whether the result is complete.
 func collectDossierMatches(ctx context.Context, http *rechtspraak.HTTP, entries []rechtspraak.SearchEntry, zaak string, limit int) ([]dossierEntry, error) {
 	wantNormalized := normalizeZaaknummer(zaak)
 	matches := make([]dossierEntry, 0, 8)
 	for i, e := range entries {
+		// Honour context cancellation before each potentially expensive
+		// HTTP call. Without this the loop swallows every error from
+		// http.Get with `continue`, including context.Canceled and
+		// context.DeadlineExceeded, and the caller would emit a partial
+		// match set as a successful result with no warning.
+		if err := ctx.Err(); err != nil {
+			return matches, err
+		}
 		if limit > 0 && i >= limit {
 			break
 		}
 		d, err := http.Get(ctx, e.ECLI, false)
 		if err != nil {
+			// Distinguish context errors from transient per-ECLI fetch
+			// failures. The per-entry skip is the right call for a 5xx
+			// or parse error on a single decision; for a cancelled
+			// context we MUST return so the partial-result warning fires.
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return matches, ctxErr
+			}
 			continue
 		}
 		for _, z := range d.Zaaknummer {

@@ -93,10 +93,22 @@ for cron / agent loops:
 			fresh := make([]rechtspraak.SearchEntry, 0, len(entries))
 			var maxMod time.Time
 			for _, e := range entries {
-				if seen[e.ECLI] {
+				// Advance the cursor watermark from EVERY returned entry,
+				// not just fresh ones. Otherwise a polling loop where the
+				// corpus is stable (all entries already in `seen`, or all
+				// filtered out by --keyword/--exclude) leaves maxMod at zero
+				// and the fallback below jumps the cursor to time.Now() —
+				// permanently skipping any decisions whose API Modified
+				// timestamp lands between the last real entry and "now".
+				// The deleted skip stays at the top of the loop so a
+				// withdrawn entry's timestamp never poisons the cursor.
+				if e.Deleted != "" {
 					continue
 				}
-				if e.Deleted != "" {
+				if e.Updated.After(maxMod) {
+					maxMod = e.Updated
+				}
+				if seen[e.ECLI] {
 					continue
 				}
 				if len(flagKeyword) > 0 || len(flagExclude) > 0 {
@@ -105,12 +117,19 @@ for cron / agent loops:
 					}
 				}
 				fresh = append(fresh, e)
-				if e.Updated.After(maxMod) {
-					maxMod = e.Updated
-				}
 			}
 			if maxMod.IsZero() {
-				maxMod = time.Now().UTC()
+				// No non-deleted entries returned at all. Hold the prior
+				// cursor (don't jump to now) so the next poll re-asks for
+				// the same window — server-side filtering is idempotent.
+				if cursor.LastModified != "" {
+					if t, perr := time.Parse("2006-01-02T15:04:05", cursor.LastModified); perr == nil {
+						maxMod = t
+					}
+				}
+				if maxMod.IsZero() {
+					maxMod = time.Now().UTC()
+				}
 			}
 			persistWatchCursor(watchKey, WatchCursor{
 				LastModified: maxMod.Format("2006-01-02T15:04:05"),
@@ -239,13 +258,13 @@ func persistWatchCursor(key string, c WatchCursor) {
 	_ = os.Rename(tmp, path)
 }
 
-func appendCursorECLIs(prev []string, fresh []rechtspraak.SearchEntry, cap int) []string {
+func appendCursorECLIs(prev []string, fresh []rechtspraak.SearchEntry, limit int) []string {
 	out := append([]string{}, prev...)
 	for _, e := range fresh {
 		out = append(out, e.ECLI)
 	}
-	if len(out) > cap {
-		out = out[len(out)-cap:]
+	if len(out) > limit {
+		out = out[len(out)-limit:]
 	}
 	return out
 }

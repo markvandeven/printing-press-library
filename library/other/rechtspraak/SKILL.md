@@ -117,7 +117,7 @@ These capabilities aren't available in any other tool for this API.
   ```
 
 ### Search narrowing for long-tail legal terms
-- **`narrow`** — Read an ECLI list from stdin (or piped from search/watch/sync), apply local include/exclude/phrase/regex filters against the synced FTS5 index, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research.
+- **`narrow`** — Read an ECLI list from stdin (or piped from search/watch/sync), fetch each decision's content from the live API (one HTTP call per ECLI, paced via the shared rate limiter), apply local include/exclude/phrase/regex filters against title+summary+body, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research.
 
   _Use this when a metadata-only search returns hundreds or thousands of decisions and an agent needs to narrow by phrasing — chain it after search, watch, or sync. The same vocabulary (`--keyword`, `--exclude`, `--phrase`, `--regex`) also lives on `search` directly for single-shot use._
 
@@ -176,7 +176,7 @@ rechtspraak-pp-cli which "<capability in your own words>"
 rechtspraak-pp-cli uitspraken search --subject strafrecht --court HR --from 2024-01-01 --keyword huurprijs --exclude "kort geding" --phrase "huurprijswijziging" --annotate-count --agent
 ```
 
-Upstream API returns metadata-only matches; the --keyword/--exclude/--phrase flags filter the result set locally against the FTS5 index — --annotate-count prints how many decisions survive after each filter pass.
+Upstream API returns metadata-only matches; without --scan-body the --keyword/--exclude/--phrase/--regex flags filter against title+summary in-memory (no fetch). With --scan-body each candidate's body is fetched and matched as well. --annotate-count prints total/fetched/post-narrow counts after the run.
 
 ### Walk the full procedural history of a Hoge Raad decision
 

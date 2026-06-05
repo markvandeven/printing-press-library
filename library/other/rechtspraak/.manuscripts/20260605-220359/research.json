@@ -169,9 +169,9 @@
     {
       "name": "Narrowing pipe",
       "command": "narrow",
-      "description": "Read an ECLI list from stdin (or piped from search/watch/sync), apply local include/exclude/phrase/regex filters against the synced FTS5 index, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research.",
+      "description": "Read an ECLI list from stdin (or piped from search/watch/sync), fetch each decision's content from the live API (paced via the shared rate limiter), apply local include/exclude/phrase/regex filters against title+summary+body, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research. Bounded by --max-pages on upstream input scope; one HTTP call per ECLI.",
       "rationale": "The upstream API has no free-text search; long-tail Dutch legal terms produce 1000+ results per topic. Iterative local narrowing over the synced corpus is the only way to cut a result set without throwing away precision.",
-      "example": "rechtspraak-pp-cli uitspraken search --subject strafrecht --court HR --from 2024-01-01 --agent | rechtspraak-pp-cli narrow --keyword huurprijs --exclude \"kort geding\" --phrase \"huurprijswijziging\" --agent",
+      "example": "rechtspraak-pp-cli search --subject strafrecht --court HR --from 2024-01-01 --agent | rechtspraak-pp-cli narrow --keyword huurprijs --exclude \"kort geding\" --phrase \"huurprijswijziging\" --agent",
       "why_it_matters": "Use this when a metadata-only search returns hundreds or thousands of decisions and an agent needs to narrow by phrasing — chain it after search, watch, or sync. The same vocabulary (`--keyword`, `--exclude`, `--phrase`, `--regex`) also lives on `search` directly for single-shot use.",
       "group": "Search narrowing for long-tail legal terms"
     }
@@ -261,9 +261,9 @@
     {
       "name": "Narrowing pipe",
       "command": "narrow",
-      "description": "Read an ECLI list from stdin (or piped from search/watch/sync), apply local include/exclude/phrase/regex filters against the synced FTS5 index, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research.",
+      "description": "Read an ECLI list from stdin (or piped from search/watch/sync), fetch each decision's content from the live API (paced via the shared rate limiter), apply local include/exclude/phrase/regex filters against title+summary+body, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research. Bounded by --max-pages on upstream input scope; one HTTP call per ECLI.",
       "rationale": "The upstream API has no free-text search; long-tail Dutch legal terms produce 1000+ results per topic. Iterative local narrowing over the synced corpus is the only way to cut a result set without throwing away precision.",
-      "example": "rechtspraak-pp-cli uitspraken search --subject strafrecht --court HR --from 2024-01-01 --agent | rechtspraak-pp-cli narrow --keyword huurprijs --exclude \"kort geding\" --phrase \"huurprijswijziging\" --agent",
+      "example": "rechtspraak-pp-cli search --subject strafrecht --court HR --from 2024-01-01 --agent | rechtspraak-pp-cli narrow --keyword huurprijs --exclude \"kort geding\" --phrase \"huurprijswijziging\" --agent",
       "why_it_matters": "Use this when a metadata-only search returns hundreds or thousands of decisions and an agent needs to narrow by phrasing — chain it after search, watch, or sync. The same vocabulary (`--keyword`, `--exclude`, `--phrase`, `--regex`) also lives on `search` directly for single-shot use.",
       "group": "Search narrowing for long-tail legal terms"
     }
@@ -301,11 +301,7 @@
     "troubleshoots": [
       {
         "symptom": "search with `--keyword` or `--phrase` returns zero results despite expected matches",
-        "fix": "By default `uitspraken search` matches `--keyword/--exclude/--phrase/--regex` against title + Atom summary only. Party/company names and many substantive terms live in the decision body, not the headnote. Pass `--scan-body` to fetch each entry's body and match against title+summary+body. One HTTP call per entry, rate-limited via the shared limiter, so scope tightly with `--from`/`--to` and `--court` first."
-      },
-      {
-        "symptom": "search reports a higher total than the entries returned",
-        "fix": "A single call fetches one page (size --max, default 100; server caps at 1000). Pass --max-pages N to sweep further pages. The CLI always emits a stderr truncation warning when upstream total \u003e fetched."
+        "fix": "Keyword/phrase filtering is local-only and requires the corpus to be synced first. Run `rechtspraak-pp-cli sync --court <code> --from <date>` to populate the FTS index, then re-run the search."
       },
       {
         "symptom": "search returns more results than expected even with `--procedure cassatie`",
@@ -321,11 +317,11 @@
       },
       {
         "symptom": "Atom feed paging is slow for multi-year backfills",
-        "fix": "Bulk weekly-archive ingest (`sync archive`) is deferred to v0.2 — see README ## Known Gaps. For backfills today, paginate the search endpoint with `--from-offset N` over a tight date window (server caps at 1000 results per request)."
+        "fix": "Use `sync archive --week <yyyy-Www>` instead — the official weekly archive is orders of magnitude faster."
       },
       {
         "symptom": "court name not recognised",
-        "fix": "Run `rechtspraak-pp-cli code \u003cname-or-code\u003e` to see the canonical name and PSI URI."
+        "fix": "Run `rechtspraak-pp-cli code <name-or-code>` to see the canonical name and PSI URI."
       }
     ],
     "when_to_use": "Reach for this CLI when an agent needs to research, monitor, or correlate Dutch court decisions. Strong fit for Dutch legal research, appellate workflow assistance, jurisprudence-corpus building, and any agent that needs structured access to ECLIs without parsing raw RDF/XML. Pairs naturally with `tenderned` and `pdok-location` for a full Dutch civic-data agent stack.",

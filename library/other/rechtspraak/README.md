@@ -193,7 +193,7 @@ These capabilities aren't available in any other tool for this API.
   ```
 
 ### Search narrowing for long-tail legal terms
-- **`narrow`** — Read an ECLI list from stdin (or piped from search/watch/sync), apply local include/exclude/phrase/regex filters against the synced FTS5 index, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research.
+- **`narrow`** — Read an ECLI list from stdin (or piped from search/watch/sync), fetch each decision's content from the live API (one HTTP call per ECLI, paced via the shared rate limiter), apply local include/exclude/phrase/regex filters against title+summary+body, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research.
 
   _Use this when a metadata-only search returns hundreds or thousands of decisions and an agent needs to narrow by phrasing — chain it after search, watch, or sync. The same vocabulary (`--keyword`, `--exclude`, `--phrase`, `--regex`) also lives on `search` directly for single-shot use._
 
@@ -210,7 +210,7 @@ These capabilities aren't available in any other tool for this API.
 rechtspraak-pp-cli uitspraken search --subject strafrecht --court HR --from 2024-01-01 --keyword huurprijs --exclude "kort geding" --phrase "huurprijswijziging" --annotate-count --agent
 ```
 
-Upstream API returns metadata-only matches; the --keyword/--exclude/--phrase flags filter the result set locally against the FTS5 index — --annotate-count prints how many decisions survive after each filter pass.
+Upstream API returns metadata-only matches; without --scan-body the --keyword/--exclude/--phrase/--regex flags filter against title+summary in-memory (no fetch). With --scan-body each candidate's body is fetched and matched as well. --annotate-count prints total/fetched/post-narrow counts after the run.
 
 ### Walk the full procedural history of a Hoge Raad decision
 
@@ -300,7 +300,7 @@ Search and fetch Dutch court decisions (ECLI register)
 
 - **`rechtspraak-pp-cli uitspraken get`** - Fetch a single decision by ECLI - returns full RDF metadata plus the inhoudsindicatie summary and the uitspraak body when available.
 - **`rechtspraak-pp-cli uitspraken image`** - Fetch an embedded image from a decision body by its imagedata identifier
-- **`rechtspraak-pp-cli uitspraken search`** - Search the ECLI index by date, court, subject, type. Per IVO 1.15: same-type params are OR-unioned, cross-type params are AND-combined. Local --keyword/--exclude/--phrase/--regex/--procedure flags narrow results against the synced FTS5 index after the API returns.
+- **`rechtspraak-pp-cli uitspraken search`** - Search the ECLI index by date, court, subject, type. Per IVO 1.15: same-type params are OR-unioned, cross-type params are AND-combined. Local --keyword/--exclude/--phrase/--regex flags filter against title+summary by default; --scan-body fetches each entry's body for matching against title+summary+body. --procedure is also filtered locally (the upstream API silently ignores procedure=).
 
 
 ## Output Formats

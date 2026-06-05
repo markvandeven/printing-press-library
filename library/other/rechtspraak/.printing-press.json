@@ -54,7 +54,7 @@
     {
       "name": "Narrowing pipe",
       "command": "narrow",
-      "description": "Read an ECLI list from stdin (or piped from search/watch/sync), apply local include/exclude/phrase/regex filters against the synced FTS5 index, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research."
+      "description": "Read an ECLI list from stdin (or piped from search/watch/sync), fetch each decision's content from the live API (paced via the shared rate limiter), apply local include/exclude/phrase/regex filters against title+summary+body, and emit the narrowed list — the defining workflow for keyword-overlap-heavy Dutch legal research. Bounded by --max-pages on upstream input scope; one HTTP call per ECLI."
     }
   ],
   "category": "other",

@@ -5,10 +5,44 @@ package client
 
 import (
 	"bytes"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"unicode/utf8"
 )
+
+// TestWriteCache_RechmodsExistingFile guards against a stale cache entry
+// written under an older, laxer-permission build (e.g. pre-upgrade 0o644)
+// staying world-readable forever: os.WriteFile only applies its perm
+// argument when creating a file, so an existing file's mode has to be
+// corrected explicitly on every write.
+func TestWriteCache_RechmodsExistingFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX permission bits don't map cleanly to Windows ACLs")
+	}
+	t.Parallel()
+
+	dir := t.TempDir()
+	c := &Client{cacheDir: dir}
+
+	cacheFile := filepath.Join(dir, c.cacheKey("/v1/mutations", nil)+".json")
+	if err := os.WriteFile(cacheFile, []byte(`{"stale": true}`), 0o644); err != nil {
+		t.Fatalf("seed stale cache file: %v", err)
+	}
+
+	c.writeCache("/v1/mutations", nil, json.RawMessage(`{"fresh": true}`))
+
+	info, err := os.Stat(cacheFile)
+	if err != nil {
+		t.Fatalf("stat cache file: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("cache file mode = %o, want 0600 (existing file must be re-chmodded on rewrite)", got)
+	}
+}
 
 func TestTruncateBody(t *testing.T) {
 	t.Parallel()

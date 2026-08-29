@@ -1555,6 +1555,35 @@ func (s *Store) upsertMutationTx(tx *sql.Tx, id string, obj map[string]any, data
 	return nil
 }
 
+// preserveMutationRows guards a mutation write against a list-sync response,
+// which omits "rows" (line-level VAT detail only "mutation get-id" returns).
+// Without this, a sync run after a get-id would silently drop the cached
+// detail and zero out VAT-summary totals. No-ops when obj already carries
+// rows or no richer cached record exists.
+func (s *Store) preserveMutationRows(id string, obj map[string]any, data json.RawMessage) json.RawMessage {
+	if _, hasRows := obj["rows"]; hasRows {
+		return data
+	}
+	existing, err := s.Get("mutation", id)
+	if err != nil {
+		return data
+	}
+	existingObj, err := DecodeJSONObject(existing)
+	if err != nil {
+		return data
+	}
+	rows, ok := existingObj["rows"]
+	if !ok {
+		return data
+	}
+	obj["rows"] = rows
+	merged, err := json.Marshal(obj)
+	if err != nil {
+		return data
+	}
+	return merged
+}
+
 // UpsertMutation inserts or updates a mutation record with domain-specific columns.
 func (s *Store) UpsertMutation(data json.RawMessage) error {
 	obj, err := DecodeJSONObject(data)
@@ -1570,21 +1599,7 @@ func (s *Store) UpsertMutation(data json.RawMessage) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
 
-	// A list-sync response omits "rows" (line-level VAT detail only
-	// "mutation get-id" returns). Without this, a sync run after a get-id
-	// would silently drop the cached detail and zero out VAT-summary totals.
-	if _, hasRows := obj["rows"]; !hasRows {
-		if existing, err := s.Get("mutation", id); err == nil {
-			if existingObj, err := DecodeJSONObject(existing); err == nil {
-				if rows, ok := existingObj["rows"]; ok {
-					obj["rows"] = rows
-					if merged, err := json.Marshal(obj); err == nil {
-						data = merged
-					}
-				}
-			}
-		}
-	}
+	data = s.preserveMutationRows(id, obj, data)
 
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -1899,6 +1914,10 @@ func (s *Store) UpsertBatch(resourceType string, items []json.RawMessage) (int, 
 			skippedCount++
 			extractFailures++
 			continue
+		}
+
+		if resourceType == "mutation" {
+			item = s.preserveMutationRows(id, obj, item)
 		}
 
 		if err := s.upsertGenericResourceTx(tx, resourceType, id, item); err != nil {

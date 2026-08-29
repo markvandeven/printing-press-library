@@ -697,6 +697,48 @@ func TestUpsertBatch_PopulatesMutationTable(t *testing.T) {
 	}
 }
 
+// TestUpsertBatch_PreservesMutationRowsAcrossSync exercises the batch-sync
+// path (UpsertBatch), which list sync calls directly and bypasses
+// UpsertMutation's single-record path. A get-id-cached detail record's
+// "rows" (line-level VAT detail the list endpoint omits) must survive a
+// subsequent list sync of the same mutation, not get overwritten by the
+// row-less list payload.
+func TestUpsertBatch_PreservesMutationRowsAcrossSync(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "data.db")
+	s, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer s.Close()
+
+	detail := json.RawMessage(`{"id": "mut-001", "rows": [{"ledger_id": "L1", "amount": "100.00"}, {"ledger_id": "L2", "amount": "-100.00"}]}`)
+	if err := s.UpsertMutation(detail); err != nil {
+		t.Fatalf("UpsertMutation(detail): %v", err)
+	}
+
+	listPayload := json.RawMessage(`{"id": "mut-001", "date": "2026-08-29"}`)
+	if _, _, err := s.UpsertBatch("mutation", []json.RawMessage{listPayload}); err != nil {
+		t.Fatalf("UpsertBatch(list sync): %v", err)
+	}
+
+	stored, err := s.Get("mutation", "mut-001")
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	obj, err := DecodeJSONObject(stored)
+	if err != nil {
+		t.Fatalf("DecodeJSONObject: %v", err)
+	}
+	rows, ok := obj["rows"]
+	if !ok {
+		t.Fatalf("rows dropped after batch sync: %s", stored)
+	}
+	rowsSlice, ok := rows.([]any)
+	if !ok || len(rowsSlice) != 2 {
+		t.Fatalf("rows = %v, want the 2-item detail rows preserved from before the batch sync", rows)
+	}
+}
+
 // TestUpsertBatch_PopulatesProductTable verifies that UpsertBatch
 // dispatches paginated items into both the generic resources table AND the
 // typed product table. Regression for issue #268: before the fix, paginated

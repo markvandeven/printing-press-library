@@ -1,0 +1,51 @@
+version: 2
+project_name: e-boekhouden-pp-cli
+changelog:
+  disable: true
+builds:
+  - id: e-boekhouden-pp-cli
+    main: ./cmd/e-boekhouden-pp-cli
+    binary: e-boekhouden-pp-cli
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/mvanhorn/printing-press-library/library/payments/e-boekhouden/internal/cli.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+  - id: e-boekhouden-pp-mcp
+    main: ./cmd/e-boekhouden-pp-mcp
+    binary: e-boekhouden-pp-mcp
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+brews:
+  - name: e-boekhouden-pp-cli
+    repository:
+      owner: markvandeven
+      name: homebrew-tap
+    homepage: "https://github.com/mvanhorn/printing-press-library"
+    description: "Balance, profit & loss, and journal entries for e-Boekhouden from your terminal"
+    install: |
+      bin.install "e-boekhouden-pp-cli"
+      bin.install "e-boekhouden-pp-mcp"

@@ -1,0 +1,9 @@
+{
+  "descriptions": {
+    "costcenter_delete-cost-center": "Permanently delete a cost center by id. Required: id (the cost center's numeric identifier, in the URL path). Returns 204 No Content on success, 404 if the id doesn't match an existing cost center, or 400 if id is malformed. Irreversible — there is no undo or restore endpoint for cost centers.",
+    "product_delete": "Permanently delete a product by id. Required: id (the product's numeric identifier, in the URL path). Returns 204 No Content on success, 404 if the id doesn't match an existing product, or 400 if id is malformed. Irreversible — there is no undo or restore endpoint for products.",
+    "session_end": "Revoke the current session token, immediately ending the authenticated session. No parameters. Returns 204 No Content on success or 401 if the session is already invalid. After calling this, the CLI must re-authenticate (exchange the long-lived API token for a new session token) before making further API calls.",
+    "swagger_get": "Fetch a specific page of e-Boekhouden's raw Swagger/OpenAPI documentation. Required: catchAll (the sub-path under /swagger to retrieve, e.g. a spec file or UI asset name). Returns whatever content the API serves at that sub-path — useful for inspecting the provider's own API metadata directly rather than this CLI's bundled spec.",
+    "swagger_list": "Fetch the root of e-Boekhouden's Swagger/OpenAPI documentation endpoint. No parameters. Returns whatever content the API serves at /swagger, typically the Swagger UI or an index of documentation sub-paths. Use swagger_get with a specific catchAll value to fetch one sub-resource directly."
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "api_name": "e-boekhouden",
+  "category": "payments",
+  "cli_name": "e-boekhouden-pp-cli",
+  "generated_at": "2026-08-29T20:27:51.450872811Z",
+  "novel_features": [
+    {
+      "name": "Administration Safety Banner",
+      "command": "mutation create",
+      "description": "Refuses to actually write a mutation or invoice without --confirm, and blocks an ambiguous write across multiple linked administrations unless --company names the exact target."
+    },
+    {
+      "name": "Invoice-Mutation Reconciliation Health",
+      "command": "invoice reconcile",
+      "description": "Lists invoices with no matching payment mutation, and mutations that reference an invoice number the CLI doesn't recognize."
+    },
+    {
+      "name": "Mutation Ledger/VAT Suggest",
+      "command": "mutation suggest",
+      "description": "Suggests the ledger and VAT code most often used for past mutations with a similar description."
+    },
+    {
+      "name": "Administration Portfolio Overview",
+      "command": "administration overview",
+      "description": "Lists every administration linked to this API token, alongside ledger balances and outstanding invoices for the one administration this session is actually authenticated against."
+    },
+    {
+      "name": "Relation Statement",
+      "command": "relation statement",
+      "description": "Full chronological history of invoices and mutations for one relation, with a computed running balance."
+    },
+    {
+      "name": "Ledger Drill-Down (T-Account)",
+      "command": "ledger history",
+      "description": "Itemized chronological mutation rows for one ledger account with a computed running balance."
+    }
+  ],
+  "printer": "markvandeven",
+  "printer_name": "markvandeven",
+  "printing_press_version": "4.22.0",
+  "run_id": "20260829-182823",
+  "schema_version": 1,
+  "spec_checksum": "sha256:2e78a780c55b777d1027f69b0ea26908cdff82162c0203bb7fdb0ef71096113a",
+  "spec_format": "openapi3"
+}

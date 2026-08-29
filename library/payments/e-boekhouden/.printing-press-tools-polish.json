@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-29T20:25:06.360197263Z",
+  "cli_dir": "\u003ccli-dir\u003e/e-boekhouden-pp-cli",
+  "findings": null,
+  "scorecard_before": {
+    "mcp_description_quality": 10,
+    "captured": "2026-08-29T20:22:12.82498594Z"
+  }
+}

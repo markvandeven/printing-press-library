@@ -1,0 +1,276 @@
+{
+  "api_name": "e-boekhouden",
+  "novelty_score": 8,
+  "alternatives": [
+    {
+      "name": "eboekhouden-rest-api",
+      "url": "https://github.com/Mantix/eboekhouden-rest-api",
+      "language": "PHP",
+      "install_method": "",
+      "stars": 0,
+      "last_updated": "",
+      "command_count": 12,
+      "has_json_output": false,
+      "has_auth_support": false
+    },
+    {
+      "name": "e-Boekhouden-MCP",
+      "url": "https://github.com/matisup10/e-Boekhouden-MCP",
+      "language": "TypeScript",
+      "install_method": "",
+      "stars": 0,
+      "last_updated": "",
+      "command_count": 49,
+      "has_json_output": false,
+      "has_auth_support": false
+    },
+    {
+      "name": "eboekhouden",
+      "url": "https://github.com/NixySoftware/eboekhouden",
+      "language": "Rust",
+      "install_method": "",
+      "stars": 0,
+      "last_updated": "",
+      "command_count": 24,
+      "has_json_output": false,
+      "has_auth_support": false
+    },
+    {
+      "name": "eboekhouden-php",
+      "url": "https://github.com/IntVent/eboekhouden-php",
+      "language": "PHP",
+      "install_method": "",
+      "stars": 0,
+      "last_updated": "",
+      "command_count": 0,
+      "has_json_output": false,
+      "has_auth_support": false
+    },
+    {
+      "name": "eBoekhouden-Node",
+      "url": "https://github.com/Vultwo/eBoekhouden-Node",
+      "language": "JavaScript",
+      "install_method": "",
+      "stars": 0,
+      "last_updated": "",
+      "command_count": 0,
+      "has_json_output": false,
+      "has_auth_support": false
+    },
+    {
+      "name": "eboekhouden-client-python",
+      "url": "https://github.com/Stichting-Verbonden-Stilte/eboekhouden-client-python",
+      "language": "Python",
+      "install_method": "",
+      "stars": 0,
+      "last_updated": "",
+      "command_count": 0,
+      "has_json_output": false,
+      "has_auth_support": false
+    }
+  ],
+  "gaps": [
+    "No file/attachment upload endpoint exists anywhere in the v1 API — invoices and mutations cannot carry attached documents via this CLI or any other client of this API."
+  ],
+  "patterns": [],
+  "recommendation": "proceed",
+  "researched_at": "2026-08-29T18:35:00Z",
+  "novel_features": [
+    {
+      "name": "Administration Safety Banner",
+      "command": "mutation create",
+      "description": "Refuses to actually write a mutation or invoice without --confirm, and blocks an ambiguous write across multiple linked administrations unless --company names the exact target.",
+      "rationale": "Requires tracking explicit write intent (--confirm) and cross-checking the token's linked administrations against a named target before sending the request — the API itself has no pre-write safety check of any kind.",
+      "example": "e-boekhouden-pp-cli mutation create --date 2026-01-15 --ledger-id 1300 --type 7 --description \"Office supplies\" --rows '[{\"ledgerId\":4200,\"vatCode\":\"HOOG_INK_21\",\"amount\":25.50}]' --dry-run",
+      "why_it_matters": "Use --dry-run to preview any mutation/invoice write, and add --confirm only once you're sure — add --company on accounts linked to more than one administration to avoid silently booking an entry into the wrong client's books.",
+      "group": "Safety-gated writes"
+    },
+    {
+      "name": "Invoice-Mutation Reconciliation Health",
+      "command": "invoice reconcile",
+      "description": "Lists invoices with no matching payment mutation, and mutations that reference an invoice number the CLI doesn't recognize.",
+      "rationale": "Requires a local join between synced invoices and synced mutations — no single API call cross-references payment status this way.",
+      "example": "e-boekhouden-pp-cli invoice reconcile --json --select unmatchedInvoices.number,unmatchedInvoices.relationName",
+      "why_it_matters": "Reach for this when chasing overdue invoices — it tells you which ones genuinely have no recorded payment, not just which the UI marks outstanding.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Mutation Ledger/VAT Suggest",
+      "command": "mutation suggest",
+      "description": "Suggests the ledger and VAT code most often used for past mutations with a similar description.",
+      "rationale": "Requires local SQLite FTS frequency-ranking of your own synced mutation history — no compatibility or reference endpoint exists in the API to source this from.",
+      "example": "e-boekhouden-pp-cli mutation suggest \"Office supplies - Staples\" --json",
+      "why_it_matters": "Use before booking a recurring but not-identical transaction to avoid re-deriving the right ledger/VAT code from memory every time.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Administration Portfolio Overview",
+      "command": "administration overview",
+      "description": "Lists every administration linked to this API token, alongside ledger balances and outstanding invoices for the one administration this session is actually authenticated against.",
+      "rationale": "The e-Boekhouden API scopes each session to exactly one administration with no way to query another administration's data in the same session — this combines the account-level administration list with what the current session can actually see, in one call.",
+      "example": "e-boekhouden-pp-cli administration overview --json",
+      "why_it_matters": "Use this to see every administration linked to an API token plus that token's own balance/outstanding figures, instead of two separate calls.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Relation Statement",
+      "command": "relation statement",
+      "description": "Full chronological history of invoices and mutations for one relation, with a computed running balance.",
+      "rationale": "Requires a local join of synced invoices and mutations by relation ID with a computed running total — no endpoint returns a unified relation ledger history.",
+      "example": "e-boekhouden-pp-cli relation statement 789012 --json",
+      "why_it_matters": "Use this to answer \"has this customer actually paid what they owe\" in one call instead of cross-referencing two separate lists.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Ledger Drill-Down (T-Account)",
+      "command": "ledger history",
+      "description": "Itemized chronological mutation rows for one ledger account with a computed running balance.",
+      "rationale": "Requires filtering synced mutation rows by ledger code and computing a cumulative running total locally — the API's balance endpoints return point-in-time totals only, not itemized history.",
+      "example": "e-boekhouden-pp-cli ledger history 1300 --json --select rows.date,rows.description,rows.runningBalance",
+      "why_it_matters": "Use this when you need to see how a specific ledger account arrived at its current balance, not just what the balance is today.",
+      "group": "Local state that compounds"
+    }
+  ],
+  "novel_features_built": [
+    {
+      "name": "Administration Safety Banner",
+      "command": "mutation create",
+      "description": "Refuses to actually write a mutation or invoice without --confirm, and blocks an ambiguous write across multiple linked administrations unless --company names the exact target.",
+      "rationale": "Requires tracking explicit write intent (--confirm) and cross-checking the token's linked administrations against a named target before sending the request — the API itself has no pre-write safety check of any kind.",
+      "example": "e-boekhouden-pp-cli mutation create --date 2026-01-15 --ledger-id 1300 --type 7 --description \"Office supplies\" --rows '[{\"ledgerId\":4200,\"vatCode\":\"HOOG_INK_21\",\"amount\":25.50}]' --dry-run",
+      "why_it_matters": "Use --dry-run to preview any mutation/invoice write, and add --confirm only once you're sure — add --company on accounts linked to more than one administration to avoid silently booking an entry into the wrong client's books.",
+      "group": "Safety-gated writes"
+    },
+    {
+      "name": "Invoice-Mutation Reconciliation Health",
+      "command": "invoice reconcile",
+      "description": "Lists invoices with no matching payment mutation, and mutations that reference an invoice number the CLI doesn't recognize.",
+      "rationale": "Requires a local join between synced invoices and synced mutations — no single API call cross-references payment status this way.",
+      "example": "e-boekhouden-pp-cli invoice reconcile --json --select unmatchedInvoices.number,unmatchedInvoices.relationName",
+      "why_it_matters": "Reach for this when chasing overdue invoices — it tells you which ones genuinely have no recorded payment, not just which the UI marks outstanding.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Mutation Ledger/VAT Suggest",
+      "command": "mutation suggest",
+      "description": "Suggests the ledger and VAT code most often used for past mutations with a similar description.",
+      "rationale": "Requires local SQLite FTS frequency-ranking of your own synced mutation history — no compatibility or reference endpoint exists in the API to source this from.",
+      "example": "e-boekhouden-pp-cli mutation suggest \"Office supplies - Staples\" --json",
+      "why_it_matters": "Use before booking a recurring but not-identical transaction to avoid re-deriving the right ledger/VAT code from memory every time.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Administration Portfolio Overview",
+      "command": "administration overview",
+      "description": "Lists every administration linked to this API token, alongside ledger balances and outstanding invoices for the one administration this session is actually authenticated against.",
+      "rationale": "The e-Boekhouden API scopes each session to exactly one administration with no way to query another administration's data in the same session — this combines the account-level administration list with what the current session can actually see, in one call.",
+      "example": "e-boekhouden-pp-cli administration overview --json",
+      "why_it_matters": "Use this to see every administration linked to an API token plus that token's own balance/outstanding figures, instead of two separate calls.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Relation Statement",
+      "command": "relation statement",
+      "description": "Full chronological history of invoices and mutations for one relation, with a computed running balance.",
+      "rationale": "Requires a local join of synced invoices and mutations by relation ID with a computed running total — no endpoint returns a unified relation ledger history.",
+      "example": "e-boekhouden-pp-cli relation statement 789012 --json",
+      "why_it_matters": "Use this to answer \"has this customer actually paid what they owe\" in one call instead of cross-referencing two separate lists.",
+      "group": "Local state that compounds"
+    },
+    {
+      "name": "Ledger Drill-Down (T-Account)",
+      "command": "ledger history",
+      "description": "Itemized chronological mutation rows for one ledger account with a computed running balance.",
+      "rationale": "Requires filtering synced mutation rows by ledger code and computing a cumulative running total locally — the API's balance endpoints return point-in-time totals only, not itemized history.",
+      "example": "e-boekhouden-pp-cli ledger history 1300 --json --select rows.date,rows.description,rows.runningBalance",
+      "why_it_matters": "Use this when you need to see how a specific ledger account arrived at its current balance, not just what the balance is today.",
+      "group": "Local state that compounds"
+    }
+  ],
+  "narrative": {
+    "display_name": "e-Boekhouden",
+    "headline": "Balance, profit \u0026 loss, and journal entries from your terminal — with local financial reports and write-safety guards the API doesn't give you.",
+    "value_prop": "e-Boekhouden's v1 REST API has no CLI today, only library wrappers in PHP, Rust, Node, and Python. This CLI absorbs every endpoint (all 24) and adds local financial reporting (trial balance, P\u0026L, balance sheet, VAT summary, AR/AP aging) computed offline from your synced ledgers and mutations, plus reconciliation and safety-gated writes for a service where every mutation is a real accounting entry.",
+    "auth_narrative": "Auth is a two-step handshake: create a long-lived API token once in your e-Boekhouden account settings, then the CLI exchanges it for a short-lived session token automatically on every run — you never handle the session token yourself, and it never touches disk as a long-lived credential.",
+    "quickstart": [
+      {
+        "command": "e-boekhouden-pp-cli doctor",
+        "comment": "Confirm the session handshake works and the API is reachable"
+      },
+      {
+        "command": "e-boekhouden-pp-cli sync --full",
+        "comment": "Pull ledgers, mutations, invoices, and relations into the local store"
+      },
+      {
+        "command": "e-boekhouden-pp-cli report trial-balance --json",
+        "comment": "Check current balance across all ledgers"
+      },
+      {
+        "command": "e-boekhouden-pp-cli report profit-loss --json",
+        "comment": "See profit and loss computed from synced mutations"
+      },
+      {
+        "command": "e-boekhouden-pp-cli mutation create --date 2026-01-15 --ledger-id 1300 --type 7 --description \"Office supplies\" --rows '[{\"ledgerId\":4200,\"vatCode\":\"HOOG_INK_21\",\"amount\":25.50}]' --dry-run",
+        "comment": "Preview a new journal entry before writing it for real"
+      }
+    ],
+    "troubleshoots": [
+      {
+        "symptom": "401 or session errors after the CLI has been idle for a while",
+        "fix": "Session tokens are short-lived; re-run any command and the CLI re-authenticates automatically using your cached API token — no manual login needed"
+      },
+      {
+        "symptom": "\"no permission to access the requested resource\" (SECURITY_001/002)",
+        "fix": "Your API token's account doesn't have access to that administration or resource — check account settings on e-Boekhouden.nl"
+      },
+      {
+        "symptom": "\"refusing to create a mutation/invoice without --confirm\"",
+        "fix": "This is intentional: run with --dry-run to preview, then add --confirm once you're sure you want to write the real entry"
+      },
+      {
+        "symptom": "\"this API token is linked to multiple administrations\"",
+        "fix": "Pass --company \"\u003cexact name\u003e\" on mutation create / invoice create to confirm which administration this write targets"
+      },
+      {
+        "symptom": "PAGE_001 / PAGE_002 errors on list commands",
+        "fix": "limit must be between 1 and 2000 and offset must be \u003e= 0 — adjust --limit/--offset"
+      }
+    ],
+    "when_to_use": "Use this CLI for day-to-day bookkeeping tasks against e-Boekhouden: checking balances and P\u0026L, searching mutations and invoices, chasing overdue payments, and booking new journal entries with safety guards. It is well-suited to bookkeepers doing weekly reconciliation, accountants managing multiple client administrations, and agents automating recurring accounting checks.",
+    "recipes": [
+      {
+        "title": "Monday portfolio round across all clients",
+        "command": "e-boekhouden-pp-cli administration overview --json",
+        "explanation": "One call replaces switching between every managed administration to check balance and outstanding invoices."
+      },
+      {
+        "title": "Chase real unpaid invoices, not just UI-flagged ones",
+        "command": "e-boekhouden-pp-cli invoice reconcile --agent --select unmatchedInvoices.number,unmatchedInvoices.relationName,unmatchedInvoices.amount",
+        "explanation": "Narrows the reconciliation report to just the fields needed to act, since invoice/mutation payloads are large."
+      },
+      {
+        "title": "Suggest a ledger/VAT code for a recurring expense",
+        "command": "e-boekhouden-pp-cli mutation suggest \"Office supplies - Staples\"",
+        "explanation": "Surfaces the ledger + VAT code you've used most often for similar descriptions before you book the entry."
+      },
+      {
+        "title": "Full customer payment history in one call",
+        "command": "e-boekhouden-pp-cli relation statement 789012",
+        "explanation": "Joins invoices and mutations for one relation with a running balance instead of cross-referencing two lists."
+      },
+      {
+        "title": "See how a ledger account reached its current balance",
+        "command": "e-boekhouden-pp-cli ledger history 1300",
+        "explanation": "Itemized mutation history with a running balance, not just the point-in-time total the API's balance endpoint returns."
+      }
+    ],
+    "trigger_phrases": [
+      "check my e-boekhouden balance",
+      "book a mutation in e-boekhouden",
+      "e-boekhouden profit and loss",
+      "which invoices are still outstanding in e-boekhouden",
+      "use e-boekhouden",
+      "run e-boekhouden"
+    ]
+  }
+}

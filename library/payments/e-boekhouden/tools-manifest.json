@@ -1,0 +1,2195 @@
+{
+  "api_name": "e-boekhouden",
+  "base_url": "https://api.e-boekhouden.nl",
+  "description": "### Quick Start\r\n\r\n1. If you haven't already, first create an API-token on the website.\r\n   API-tokens can be managed in the settings of your account.  \r\n   Make sure to save your token somewhere secure, as it will not be shown again after creation.\r\n2. Send a POST request to the `/v1/session` endpoint with your API-token. This creates a short-lived session token.  \r\n   \u003cem\u003eTip: A unique source can help us troubleshoot problems quicker when contacting support.  \u003c/em\u003e\r\n   ```json\r\n   {\r\n     \"accessToken\": \"API_TOKEN\",\r\n     \"source\": \"Postman\"\r\n   }\r\n   ```\r\n3. Include the session token from the response in your request headers to access the rest of the API.  \r\n   ```\r\n   Authorization: SESSION_TOKEN\r\n   ```\r\n\r\n### Filters\r\n\r\nVarious parameters support filters. These can be identified with the format `($filter-type)`, where `type` is a known [OAS type format](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#data-types).  \r\nCurrently only one filter can be applied to a parameter.\r\n\r\n\u003cdetails\u003e\r\n\u003csummary\u003eStrings\u003c/summary\u003e\r\n\r\n#### Strings (`$filter-string`)\r\n\r\n\u003cdiv data-table-slim\u003e\r\n\r\n| Filter | Syntax | Example |\r\n|---|---|---|\r\n| Equal* | `[eq]` | `?parameter=value` |\r\n| Not equal | `[not_eq]` | `?parameter[not_eq]=value` |\r\n| Like** | `[like]` | `?parameter[like]=%25value%25` |\r\n| Not like** | `[not_like]` | `?parameter[not_like]=%25value%25` |\r\n\r\n\u003c/div\u003e\r\n\r\n\u003csub\u003e\\* Equal is used as the default filter if none is given.\u003c/sub\u003e\u003cbr/\u003e\r\n\u003csub\u003e\\*\\* Wildcards `?` (one character) and `%` (multiple characters) may be used. Keep in mind these must be escaped when used in a query.\u003c/sub\u003e\r\n\r\n\u003c/details\u003e\r\n\r\n\u003cdetails\u003e\r\n\u003csummary\u003eNumbers\u003c/summary\u003e\r\n\r\n#### Numbers (`$filter-int32`, `$filter-int64`)\r\n\r\n\u003cdiv data-table-slim\u003e\r\n\r\n| Filter | Syntax | Example |\r\n|---|---|---|\r\n| Equal* | `[eq]` | `?parameter=5` |\r\n| Not equal | `[not_eq]` | `?parameter[not_eq]=5` |\r\n| Greater than | `[gt]` | `?parameter[gt]=5` |\r\n| Greater than or equal to | `[gte]` | `?parameter[gte]=5` |\r\n| Less than | `[lt]` | `?parameter[lt]=5` |\r\n| Less than or equal to | `[lte]` | `?parameter[lte]=5` |\r\n| Range** | `[range]` | `?parameter[range]=5,10` |\r\n\r\n\u003c/div\u003e\r\n\r\n\u003csub\u003e\\* Equal is used as the default filter if none is given.\u003c/sub\u003e  \r\n\u003csub\u003e\\*\\* Values are inclusive.\u003c/sub\u003e\r\n\r\n\u003c/details\u003e\r\n\r\n\u003cdetails\u003e\r\n\u003csummary\u003eDates\u003c/summary\u003e\r\n\r\n#### Dates (`$filter-date`)\r\n\r\n\u003cdiv data-table-slim\u003e\r\n\r\n| Filter | Syntax | Example |\r\n|---|---|---|\r\n| Equal* | `[eq]` | `?parameter=2025-01-01` |\r\n| Not equal | `[not_eq]` | `?parameter[not_eq]=2025-01-01` |\r\n| Greater than | `[gt]` | `?parameter[gt]=2025-01-01` |\r\n| Greater than or equal to | `[gte]` | `?parameter[gte]=2025-01-01` |\r\n| Less than | `[lt]` | `?parameter[lt]=2025-01-01` |\r\n| Less than or equal to | `[lte]` | `?parameter[lte]=2025-01-01` |\r\n| Range** | `[range]` | `?parameter[range]=2025-01-01,2025-12-31` |\r\n\r\n\u003c/div\u003e\r\n\r\n\u003csub\u003e\\* Equal is used as the default filter if none is given.\u003c/sub\u003e  \r\n\u003csub\u003e\\*\\* Values are inclusive.\u003c/sub\u003e\r\n\r\n\u003c/details\u003e\r\n\r\n### Paging\r\n\r\nMost search endpoints have an optional `limit` and `offset` parameter.  \r\nThe parameter `limit` defaults to 100 and must be an integer between 1 and 2000.  \r\nThe parameter `offset` defaults to 0 and must be a positive integer.\r\n\r\n\r\n### Dates\r\n\r\nSome endpoints accept or return date properties. These should always follow the ISO 8601 format.  \r\nThe format is `YYYY-MM-DD` for dates.\r\n\r\n\r\n### VAT codes\r\n\r\nSome endpoints accept or return VAT codes. Please ensure that you only use VAT codes relevant to the country your company is registered in. \u003c/br\u003e\r\nThe available VAT codes are as follows.\r\n\r\n\u003cdetails\u003e\r\n\u003csummary\u003eNL\u003c/summary\u003e\r\n\r\n| Code | Description | Rate | Type | Cut-off date |\r\n|---|---|---|---|---|\r\n| LAAG_VERK | VAT 6% | 6% | Sale | **2019-01-01** |\r\n| LAAG_VERK_9 | VAT 9% | 9% | Sale | |\r\n| HOOG_VERK_21 | VAT 21% | 21% | Sale | |\r\n| AFW_VERK | Divergent | | Sale | |\r\n| VERL_VERK | Reverse charge 21% | 21% | Sale | |\r\n| VERL_VERK_L9 | Reverse charge 9% | 9% | Sale | |\r\n| BU_EU_VERK | Delivery outside the EU 0% | 0% | Sale | |\r\n| AFST_VERK | Distance selling within the EU 0% | 0% | Sale | |\r\n| BI_EU_VERK_D | Services within the EU 0% | 0% | Sale | |\r\n| LAAG_INK | VAT 6% | 6% | Purchase | **2019-01-01** |\r\n| LAAG_INK_9 | VAT 9% | 9% | Purchase | |\r\n| HOOG_INK_21 | VAT 21% | 21% | Purchase | |\r\n| AFW | Divergent | | Purchase | |\r\n| VERL_INK_L9 | Reverse charge 9% | 9% | Purchase | |\r\n| VERL_INK_L | Reverse charge 6% | 6% | Purchase | **2019-01-01** |\r\n| VERL_INK | Reverse charge 21% | 21% | Purchase | |\r\n| BU_EU_INK | Delivery/services outside the EU 0% | 0% | Purchase | |\r\n| BI_EU_VERK | Delivery within the EU 0% | 0% | Purchase | |\r\n| BI_EU_INK | Delivery/services within the EU 0% | 0% | Purchase | |\r\n| GEEN | No VAT | 0% | | |\r\n\r\n\u003c/details\u003e\r\n\r\n\u003cdetails\u003e\r\n\u003csummary\u003eBE\u003c/summary\u003e\r\n\r\n| Code | Description | Rate | Type | Cut-off date |\r\n|---|---|---|---|---|\r\n| BE_0_INK | Domestic purchase (0%) | 0% | Purchase | |\r\n| BE_6_INK | Domestic purchase (6%) | 6% | Purchase | |\r\n| BE_12_INK | Domestic purchase (12%) | 12% | Purchase | |\r\n| BE_21_INK | Domestic purchase (21%) | 21% | Purchase | |\r\n| BE_VERL_0_INK | Reverse charge (co-contractor 0%) | 0% | Purchase | |\r\n| BE_VERL_6_INK | Reverse charge (co-contractor 6%) | 6% | Purchase | |\r\n| BE_VERL_12_INK | Reverse charge (co-contractor 12%) | 12% | Purchase | |\r\n| BE_VERL_21_INK | Reverse charge (co-contractor 21%) | 21% | Purchase | |\r\n| BE_IC_D_0_INK | Intra-comm. service (EU 0%) | 0% | Purchase | |\r\n| BE_IC_D_6_INK | Intra-comm. service (EU 6%) | 6% | Purchase | |\r\n| BE_IC_D_12_INK | Intra-comm. service (EU 12%) | 12% | Purchase | |\r\n| BE_IC_D_21_INK | Intra-comm. service (EU 21%) | 21% | Purchase | |\r\n| BE_IC_0_INK | Intra-comm. goods (EU 0%) | 0% | Purchase | |\r\n| BE_IC_6_INK | Intra-comm. goods (EU 6%) | 6% | Purchase | |\r\n| BE_IC_12_INK | Intra-comm. goods (EU 12%) | 12% | Purchase | |\r\n| BE_IC_21_INK | Intra-comm. goods (EU 21%) | 21% | Purchase | |\r\n| BE_IMP_0_INK | Import reverse charge (0%) | 0% | Purchase | |\r\n| BE_IMP_6_INK | Import reverse charge (6%) | 6% | Purchase | |\r\n| BE_IMP_12_INK | Import reverse charge (12%) | 12% | Purchase | |\r\n| BE_IMP_21_INK | Import reverse charge (21%) | 21% | Purchase | |\r\n| BE_0_VERK | Domestic sale (0%) | 0% | Sale | |\r\n| BE_6_VERK | Domestic sale (6%) | 6% | Sale | |\r\n| BE_12_VERK | Domestic sale (12%) | 12% | Sale | |\r\n| BE_21_VERK | Domestic sale (21%) | 21% | Sale | |\r\n| BE_IC_D_VERK | Intra-comm. service (EU 0%) | 0% | Sale | |\r\n| BE_VERL_VERK | Reverse charge (co-contractor 0%) | 0% | Sale | |\r\n| BE_IC_VERK | Intra-comm. goods (EU 0%) | 0% | Sale | |\r\n| BE_EXP_VERK | Export sale (0%) | 0% | Sale | |\r\n| GEEN | No VAT | 0% | | |\r\n\r\n\u003c/details\u003e\r\n\r\n\r\n### Company registration number\r\n\r\nThe company registration number is a unique identifier for a company.\r\nIn the Netherlands this is the \"KVK-nummer\". In Belgium this is the \"ondernemingsnummer\".\r\n### Error Codes\r\nPossible error codes thrown by endpoints. If the property `code` is present on an error response, it will contain one of these codes.\r\n\u003cdetails\u003e\r\n\u003csummary\u003eError codes\u003c/summary\u003e\r\n\u003cdiv data-table-slim\u003e\u003ctable\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ERR_001\"\u003eERR_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSomething went wrong.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ERR_002\"\u003eERR_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eYour request contains an invalid value.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"DATA_01\"\u003eDATA_01\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNo content body provided.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MODULE_001\"\u003eMODULE_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe limit for the free trial of the accounting module has been reached.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MODULE_002\"\u003eMODULE_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe limit for the free trial of the invoicing module has been reached.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"PAGE_001\"\u003ePAGE_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLimit must be between 1 and 2000.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"PAGE_002\"\u003ePAGE_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eOffset must be greater than or equal to 0.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_001\"\u003eSECURITY_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNo permission to access the requested resource.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_002\"\u003eSECURITY_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNo administration has been opened in the current session.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_003\"\u003eSECURITY_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNo access to the requested administration.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_004\"\u003eSECURITY_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe requested administration has not been activated.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_005\"\u003eSECURITY_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe requested administration is not available due to an overdue payment.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_006\"\u003eSECURITY_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe requested administration is not accessible. Please contact the adminstration or log in on the website.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_007\"\u003eSECURITY_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe period has been closed by your accountant and can not be changed.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_008\"\u003eSECURITY_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe period has been closed by your accountant and can not be reopened.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_009\"\u003eSECURITY_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eConnections with other parties can only be managed when the administration has customer access enabled.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_010\"\u003eSECURITY_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNot authenticated. Check your Authorization header.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_011\"\u003eSECURITY_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThis account is registered under a different domain. Please make sure you're using the API on the correct domain.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SECURITY_999\"\u003eSECURITY_999\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSomething went wrong during authentication.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SMTP_001\"\u003eSMTP_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSending the e-mail failed. Check your SMTP settings.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SMTP_002\"\u003eSMTP_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSending the e-mail failed. Check your SMTP settings.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"SMTP_003\"\u003eSMTP_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSending the e-mail failed. Check your SMTP settings.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"PAKKET_001\"\u003ePAKKET_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct limit reached.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"PAKKET_002\"\u003ePAKKET_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct limit reached.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_001\"\u003eFACT_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation ID is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_002\"\u003eFACT_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_003\"\u003eFACT_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation is inactive.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_004\"\u003eFACT_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTotal invoice amount too high.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_005\"\u003eFACT_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTotal invoice amount too low.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_006\"\u003eFACT_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_007\"\u003eFACT_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_008\"\u003eFACT_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_009\"\u003eFACT_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number does not end with a digit.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_010\"\u003eFACT_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice VAT must be IN or EX.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_011\"\u003eFACT_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice date is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_012\"\u003eFACT_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice date invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_013\"\u003eFACT_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice date out of range.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_014\"\u003eFACT_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePayment reference is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_015\"\u003eFACT_015\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_016\"\u003eFACT_016\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment out of range.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_017\"\u003eFACT_017\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice text is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_018\"\u003eFACT_018\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice template not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_019\"\u003eFACT_019\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice items are missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_020\"\u003eFACT_020\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail template not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_021\"\u003eFACT_021\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_022\"\u003eFACT_022\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSend to Peppol for relation without Peppol Id.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_023\"\u003eFACT_023\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eAlready sent to Peppol.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_024\"\u003eFACT_024\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eAdministration has no Peppol integration configured\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_025\"\u003eFACT_025\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eToo many items.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_101\"\u003eFACT_101\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number is in use.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_102\"\u003eFACT_102\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe limit for the free trial of the invoicing module has been reached. Upgrade your subscription to continue invoicing without restrictions.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_001\"\u003eFACT_EMAIL_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation email is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_002\"\u003eFACT_EMAIL_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation email is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_003\"\u003eFACT_EMAIL_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation email for invoices is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_004\"\u003eFACT_EMAIL_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation email for reminders is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_005\"\u003eFACT_EMAIL_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSomething went wrong while attaching files to the email.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_006\"\u003eFACT_EMAIL_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSender email is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_007\"\u003eFACT_EMAIL_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation email is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_008\"\u003eFACT_EMAIL_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation email is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_009\"\u003eFACT_EMAIL_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCC email is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_010\"\u003eFACT_EMAIL_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eBCC email is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_011\"\u003eFACT_EMAIL_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail body is too long\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_012\"\u003eFACT_EMAIL_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCC or BCC contains a duplicate address.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_013\"\u003eFACT_EMAIL_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSubject is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_EMAIL_014\"\u003eFACT_EMAIL_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eBody is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_001\"\u003eFACT_INCASSO_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate type is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_002\"\u003eFACT_INCASSO_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate type is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_003\"\u003eFACT_INCASSO_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate ID is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_004\"\u003eFACT_INCASSO_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate ID is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_005\"\u003eFACT_INCASSO_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate signed date is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_006\"\u003eFACT_INCASSO_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate signed date is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_007\"\u003eFACT_INCASSO_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate signed date out of range.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_008\"\u003eFACT_INCASSO_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIBAN is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_009\"\u003eFACT_INCASSO_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIBAN is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_010\"\u003eFACT_INCASSO_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIBAN is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_011\"\u003eFACT_INCASSO_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eName is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_012\"\u003eFACT_INCASSO_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCity is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_013\"\u003eFACT_INCASSO_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription line 1 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_014\"\u003eFACT_INCASSO_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription line 2 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_INCASSO_015\"\u003eFACT_INCASSO_015\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription line 3 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_VERWERK_001\"\u003eFACT_VERWERK_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice date resides in a closed period.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_VERWERK_002\"\u003eFACT_VERWERK_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_VERWERK_003\"\u003eFACT_VERWERK_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePayment reference is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_VERWERK_004\"\u003eFACT_VERWERK_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePayment reference already exists.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_SJAB_001\"\u003eFACT_SJAB_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eName is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_SJAB_002\"\u003eFACT_SJAB_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eName is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_SJAB_003\"\u003eFACT_SJAB_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eType is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_SJAB_004\"\u003eFACT_SJAB_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eType is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ADM_001\"\u003eADM_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail administration is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ADM_002\"\u003eADM_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail administration is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"EP_001\"\u003eEP_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThis endpoint is only available to accountants.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"EP_002\"\u003eEP_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThis endpoint is not available for accountants.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_001\"\u003eFACT_ITEM_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription invoice item is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_002\"\u003eFACT_ITEM_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription invoice item is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_003\"\u003eFACT_ITEM_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCode invoice item is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_004\"\u003eFACT_ITEM_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePrice per unit excl. VAT is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_005\"\u003eFACT_ITEM_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePrice per unit incl. VAT is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_006\"\u003eFACT_ITEM_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eVAT code is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_007\"\u003eFACT_ITEM_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger ID is missing\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_008\"\u003eFACT_ITEM_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTotal price is too high.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_009\"\u003eFACT_ITEM_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTotal price is too low.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_010\"\u003eFACT_ITEM_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eUnit not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_011\"\u003eFACT_ITEM_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_012\"\u003eFACT_ITEM_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger account not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_013\"\u003eFACT_ITEM_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDiscount amount cannot have a value when discount percentage is passed.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_014\"\u003eFACT_ITEM_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvalid VAT code.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"FACT_ITEM_015\"\u003eFACT_ITEM_015\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eVAT amount must be used with VAT code: 'AFW_VERK'\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_001\"\u003eREL_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation type is invalid (B,P).\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_002\"\u003eREL_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eName is mandatory.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_003\"\u003eREL_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eName is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_004\"\u003eREL_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eGender is invalid (m,v,a).\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_005\"\u003eREL_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCode is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_006\"\u003eREL_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCode is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_007\"\u003eREL_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIban is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_008\"\u003eREL_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCompany registration number must be numeric.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_009\"\u003eREL_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eContact is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_010\"\u003eREL_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSalutation is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_011\"\u003eREL_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eAddress is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_012\"\u003eREL_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePostal code is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_013\"\u003eREL_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCity is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_014\"\u003eREL_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCountry is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_015\"\u003eREL_015\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eAddress 2 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_016\"\u003eREL_016\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePostal code 2 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_017\"\u003eREL_017\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCity 2 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_018\"\u003eREL_018\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCountry 2 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_019\"\u003eREL_019\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePhone is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_020\"\u003eREL_020\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMobile is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_021\"\u003eREL_021\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFax is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_022\"\u003eREL_022\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_023\"\u003eREL_023\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_024\"\u003eREL_024\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail invoice is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_025\"\u003eREL_025\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail invoice is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_026\"\u003eREL_026\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail reminder is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_027\"\u003eREL_027\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail reminder is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_028\"\u003eREL_028\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eWebsite is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_029\"\u003eREL_029\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIban is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_030\"\u003eREL_030\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment too low.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_031\"\u003eREL_031\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment too high.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_032\"\u003eREL_032\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eBIC is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_033\"\u003eREL_033\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate type is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_034\"\u003eREL_034\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate ID is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_035\"\u003eREL_035\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eVAT number is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_036\"\u003eREL_036\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSoort is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_037\"\u003eREL_037\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 1 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_038\"\u003eREL_038\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 2 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_039\"\u003eREL_039\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 3 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_040\"\u003eREL_040\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 4 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_041\"\u003eREL_041\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 5 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_042\"\u003eREL_042\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 6 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_043\"\u003eREL_043\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 7 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_044\"\u003eREL_044\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 8 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_045\"\u003eREL_045\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 9 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_046\"\u003eREL_046\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 10 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_047\"\u003eREL_047\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNote too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_048\"\u003eREL_048\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_049\"\u003eREL_049\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCode already exists.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_050\"\u003eREL_050\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCompany registration number is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_051\"\u003eREL_051\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate type is invalid (E,D).\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_052\"\u003eREL_052\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate value is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_054\"\u003eREL_054\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation ID is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_055\"\u003eREL_055\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_056\"\u003eREL_056\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePeppol ID is only for companies.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"REL_057\"\u003eREL_057\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePeppol ID is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_001\"\u003eLEDG_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCode is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_002\"\u003eLEDG_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCode is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_003\"\u003eLEDG_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_004\"\u003eLEDG_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDescription is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_005\"\u003eLEDG_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCategory is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_007\"\u003eLEDG_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eGroup is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_009\"\u003eLEDG_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger ID is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_010\"\u003eLEDG_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger category doesn't exist.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_011\"\u003eLEDG_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_012\"\u003eLEDG_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger group doesn't exist.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_013\"\u003eLEDG_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger code already exists.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_014\"\u003eLEDG_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe category of a ledger with booked mutations can not be changed.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_015\"\u003eLEDG_015\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThis ledger has booked mutations. The category can only be changed to 'BAL' or 'VW'.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_016\"\u003eLEDG_016\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThere has to be at least one ledger of each category.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_017\"\u003eLEDG_017\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger code is already in use as a group code.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_018\"\u003eLEDG_018\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger category is not allowed.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_019\"\u003eLEDG_019\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger category may not be modified.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"LEDG_020\"\u003eLEDG_020\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe request took too long to execute. Use `from` and `to` to filter a more specific period.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_001\"\u003eCOST_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost Center not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_002\"\u003eCOST_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center could not be deleted.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_003\"\u003eCOST_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center description is required.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_004\"\u003eCOST_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center description is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_005\"\u003eCOST_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center with this name already exists on this level of the tree.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_006\"\u003eCOST_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center parent id cannot be changed.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_007\"\u003eCOST_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center parent is not active.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_008\"\u003eCOST_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center parent not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_009\"\u003eCOST_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center cannot be deleted. A cost center exists below this cost center.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_010\"\u003eCOST_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center cannot be deleted. This cost center is in use by an other cost center.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_011\"\u003eCOST_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center fullPath is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"COST_012\"\u003eCOST_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center description has invalid characters.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"UUR_FACT_001\"\u003eUUR_FACT_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_001\"\u003eMUTA_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger id is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_002\"\u003eMUTA_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eType is missing\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_003\"\u003eMUTA_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eVat amount must be used with vatCode: 'AFW' or 'AFW_VERK'\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_004\"\u003eMUTA_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger ID for row is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_005\"\u003eMUTA_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIn/Ex VAT is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_006\"\u003eMUTA_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCredit/Debit is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_007\"\u003eMUTA_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCredit/Debit must be 'C' or 'D'.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_008\"\u003eMUTA_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePayment reference already exists.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUTA_009\"\u003eMUTA_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eType is unknown.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"API_SESSION_001\"\u003eAPI_SESSION_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSource is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"API_SESSION_002\"\u003eAPI_SESSION_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSource does not match pattern.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"API_SESSION_003\"\u003eAPI_SESSION_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eAccess token is missing or empty.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"API_SESSION_004\"\u003eAPI_SESSION_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eAccess token has expired.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_001\"\u003eART_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_002\"\u003eART_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct ID is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_003\"\u003eART_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct could not be deleted\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_004\"\u003eART_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Code is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_005\"\u003eART_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Description is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_006\"\u003eART_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Ledger ID is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_007\"\u003eART_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Code is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_008\"\u003eART_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Description is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_009\"\u003eART_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Ledger could not be found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_010\"\u003eART_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Cost center is inactive.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_011\"\u003eART_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Unit could not be found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_012\"\u003eART_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct Group could not be found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_013\"\u003eART_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct VAT code could not be found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_014\"\u003eART_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvalid value provided for the Product UpdateSubscriptions option.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_015\"\u003eART_015\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct cost center could not be found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_016\"\u003eART_016\u003c/a\u003e\u003c/td\u003e\u003ctd\u003epriceIncl cannot have a value when priceExcl is passed.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_017\"\u003eART_017\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eProduct VAT code is required.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_018\"\u003eART_018\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEither priceExcl or priceIncl is required.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_019\"\u003eART_019\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eBoth priceExcl and priceIncl are required with current VAT code.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_020\"\u003eART_020\u003c/a\u003e\u003c/td\u003e\u003ctd\u003epriceIncl cannot be null or empty.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_021\"\u003eART_021\u003c/a\u003e\u003c/td\u003e\u003ctd\u003epriceExcl cannot be null or empty.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_022\"\u003eART_022\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eVAT code cannot be null or empty.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_023\"\u003eART_023\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThis VAT code cannot be used.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_024\"\u003eART_024\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PriceExcl exceeds the maximum value of 999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_025\"\u003eART_025\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PriceIncl exceeds the maximum value of 999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_026\"\u003eART_026\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PriceIncl after applying VAT exceeds the maximum value of 999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_027\"\u003eART_027\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PurchasePriceExcl exceeds the maximum value of 999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_028\"\u003eART_028\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger category must be 'BAL' or 'VW'.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_029\"\u003eART_029\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PriceExcl is below the minimum value of -999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_030\"\u003eART_030\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PriceIncl is below the minimum value of -999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_031\"\u003eART_031\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PriceIncl after applying VAT is below the minimum value of -999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"ART_032\"\u003eART_032\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThe value of PurchasePriceExcl is below the minimum value of -999999999999.00.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_001\"\u003eMUT_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eType is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_002\"\u003eMUT_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_003\"\u003eMUT_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDate is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_004\"\u003eMUT_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDate is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_005\"\u003eMUT_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePeriod is closed.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_007\"\u003eMUT_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eUnknown ledger for mutation.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_008\"\u003eMUT_008\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eUnknown ledger category for mutation.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_009\"\u003eMUT_009\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvalid ledger category for mutation.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_010\"\u003eMUT_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger must be of category creditor.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_011\"\u003eMUT_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger must be of category debtor.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_012\"\u003eMUT_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_013\"\u003eMUT_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_014\"\u003eMUT_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation is prohibited.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_015\"\u003eMUT_015\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment is not permitted.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_016\"\u003eMUT_016\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment is prohibited.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_017\"\u003eMUT_017\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIn/Ex VAT must be 'IN' or 'EX'.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_018\"\u003eMUT_018\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_019\"\u003eMUT_019\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number already exists.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_020\"\u003eMUT_020\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCombination relation/invoice number already exists.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_021\"\u003eMUT_021\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDate of opening balance must be before the first mutation.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_022\"\u003eMUT_022\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eDate of mutation must be after the date of opening balance.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_025\"\u003eMUT_025\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eOpening balance mutation must always be ID 0.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_026\"\u003eMUT_026\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIn/Ex VAT must always be 'EX' on purchases with reverse-charging VAT.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_050\"\u003eMUT_050\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eUnknown administration.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_100\"\u003eMUT_100\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRows are missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_101\"\u003eMUT_101\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eToo many rows.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_104\"\u003eMUT_104\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eUnknown ledger for row.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_105\"\u003eMUT_105\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eUnknown ledger category for row.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_106\"\u003eMUT_106\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvalid ledger category for row.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_107\"\u003eMUT_107\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger of row must be of category creditor.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_108\"\u003eMUT_108\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger of row must be of category debtor.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_109\"\u003eMUT_109\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvalid VAT code.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_110\"\u003eMUT_110\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eVAT code must be of type purchase.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_111\"\u003eMUT_111\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eVAT code must be of type sale.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_112\"\u003eMUT_112\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_113\"\u003eMUT_113\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_114\"\u003eMUT_114\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eRelation is not permitted.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_115\"\u003eMUT_115\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_116\"\u003eMUT_116\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice is not permitted.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_117\"\u003eMUT_117\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCost center not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_118\"\u003eMUT_118\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger is not in balance.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_120\"\u003eMUT_120\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eInvoice number is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_300\"\u003eMUT_300\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMutation not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MUT_901\"\u003eMUT_901\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNot all ledgers exist.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_001\"\u003eMEM_001\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMember not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_002\"\u003eMEM_002\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eName is mandatory.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_003\"\u003eMEM_003\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eName is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_004\"\u003eMEM_004\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eGender is invalid (m,v,a).\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_005\"\u003eMEM_005\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMember number is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_006\"\u003eMEM_006\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMember number is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_007\"\u003eMEM_007\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIban is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_010\"\u003eMEM_010\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eSalutation is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_011\"\u003eMEM_011\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eAddress is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_012\"\u003eMEM_012\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePostal code is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_013\"\u003eMEM_013\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCity is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_014\"\u003eMEM_014\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eCountry is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_019\"\u003eMEM_019\u003c/a\u003e\u003c/td\u003e\u003ctd\u003ePhone is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_020\"\u003eMEM_020\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMobile is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_021\"\u003eMEM_021\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFax is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_022\"\u003eMEM_022\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_023\"\u003eMEM_023\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_024\"\u003eMEM_024\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail invoice is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_025\"\u003eMEM_025\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail invoice is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_026\"\u003eMEM_026\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail reminder is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_027\"\u003eMEM_027\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eEmail reminder is invalid.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_029\"\u003eMEM_029\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eIban is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_030\"\u003eMEM_030\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment too low.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_031\"\u003eMEM_031\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eTerm of payment too high.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_032\"\u003eMEM_032\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eBIC is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_033\"\u003eMEM_033\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate type is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_034\"\u003eMEM_034\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate ID is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_037\"\u003eMEM_037\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 1 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_038\"\u003eMEM_038\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 2 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_039\"\u003eMEM_039\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 3 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_040\"\u003eMEM_040\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 4 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_041\"\u003eMEM_041\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 5 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_042\"\u003eMEM_042\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 6 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_043\"\u003eMEM_043\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 7 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_044\"\u003eMEM_044\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 8 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_045\"\u003eMEM_045\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 9 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_046\"\u003eMEM_046\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eFree text 10 is too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_047\"\u003eMEM_047\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eNote too long.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_048\"\u003eMEM_048\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eLedger not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_049\"\u003eMEM_049\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMember number already exists.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_051\"\u003eMEM_051\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate type is invalid (E,D).\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_052\"\u003eMEM_052\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMandate value is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_054\"\u003eMEM_054\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMember ID is missing.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_055\"\u003eMEM_055\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eMember not found.\u003c/td\u003e\r\n\u003ctr\u003e\u003ctd\u003e\u003ca name=\"MEM_056\"\u003eMEM_056\u003c/a\u003e\u003c/td\u003e\u003ctd\u003eThis endpoint is only available to clubs or associations.\u003c/td\u003e\r\n\u003c/table\u003e\u003c/div\u003e\u003c/details\u003e",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "auth": {
+    "type": "api_key",
+    "header": "Authorization",
+    "in": "header",
+    "env_vars": [
+      "EBOEKHOUDEN_API_TOKEN"
+    ],
+    "env_var_specs": [
+      {
+        "name": "EBOEKHOUDEN_API_TOKEN",
+        "kind": "per_call",
+        "required": true,
+        "sensitive": true,
+        "inferred": true
+      }
+    ],
+    "key_url": "https://mijn.e-boekhouden.nl/instellingen/koppelingen"
+  },
+  "required_headers": [],
+  "tools": [
+    {
+      "name": "administration_get",
+      "description": "Get all administrations managed by the authorized accountant. Optional: limit, offset. Returns array of AdministrationResponseDto.",
+      "method": "GET",
+      "path": "/v1/administration",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        }
+      ]
+    },
+    {
+      "name": "administration_get-linked",
+      "description": "Get all administrations that are linked to the authorized administration. Please note that this endpoint will always return administrations linked to the administration of the user that created the API credentials. Optional: limit, offset. Returns array of AdministrationResponseDto.",
+      "method": "GET",
+      "path": "/v1/administration/linked",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        }
+      ]
+    },
+    {
+      "name": "costcenter_create-cost-center",
+      "description": "Create a new cost center. Optional: active, description, parentId. Returns the new CostCenterCreateResponse.",
+      "method": "POST",
+      "path": "/v1/costcenter",
+      "params": [
+        {
+          "name": "active",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the cost center is active. Error codes COST_007 Cost center parent is not active."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "body",
+          "description": "The description of the cost center. Error codes COST_003 Cost center description is required. COST_004 Cost center description is too long. COST_005 Cost center with this name already exists on this level of the tree. COST_011 Cost center fullPath is too long. COST_012 Cost center description has invalid characters."
+        },
+        {
+          "name": "parentId",
+          "type": "int",
+          "location": "body",
+          "description": "The parent ID of the cost center. Error codes COST_005 Cost center with this name already exists on this level of the tree. COST_006 Cost center parent id cannot be changed. COST_007 Cost center parent is not active. COST_008 Cost center parent not found."
+        }
+      ]
+    },
+    {
+      "name": "costcenter_delete-cost-center",
+      "description": "Permanently delete a cost center by id. Required: id (the cost center's numeric identifier, in the URL path). Returns 204 No Content on success, 404 if the id doesn't match an existing cost center, or 400 if id is malformed. Irreversible — there is no undo or restore endpoint for cost centers. Destructive.",
+      "method": "DELETE",
+      "path": "/v1/costcenter/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "costcenter_get-cost-center",
+      "description": "Get a cost center. Required: id. Returns the CostCenterResponse.",
+      "method": "GET",
+      "path": "/v1/costcenter/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "costcenter_get-cost-centers",
+      "description": "Get all cost centers. Optional: limit, offset, parentId (plus 1 more). Returns array of CostCenterSearchResponseDto.",
+      "method": "GET",
+      "path": "/v1/costcenter",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "parentId",
+          "type": "string",
+          "location": "query",
+          "description": "The parent ID of the cost center."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "query",
+          "description": "The description of the cost center."
+        }
+      ]
+    },
+    {
+      "name": "costcenter_update-cost-center",
+      "description": "Update a cost center. Required: id. Optional: active, description. Partial update.",
+      "method": "PATCH",
+      "path": "/v1/costcenter/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the cost center is active. Error codes COST_007 Cost center parent is not active."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "body",
+          "description": "The description of the cost center. Error codes COST_003 Cost center description is required. COST_004 Cost center description is too long. COST_005 Cost center with this name already exists on this level of the tree. COST_011 Cost center fullPath is too long. COST_012 Cost center description has invalid characters."
+        }
+      ]
+    },
+    {
+      "name": "emailtemplate_get-email-templates",
+      "description": "Get all email templates. Optional: limit, offset. Returns array of EmailTemplateDto.",
+      "method": "GET",
+      "path": "/v1/emailtemplate",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        }
+      ]
+    },
+    {
+      "name": "invoice_create",
+      "description": "Create a new invoice. Required: items, relationId, templateId, termOfPayment (default: 0). Optional: date, directDebit, email (plus 7 more). Returns the new CreatedInvoice.",
+      "method": "POST",
+      "path": "/v1/invoice",
+      "params": [
+        {
+          "name": "date",
+          "type": "string",
+          "location": "body",
+          "description": "Invoice date. Error codes FACT_011 Invoice date is missing. FACT_012 Invoice date invalid. FACT_013 Invoice date out of range."
+        },
+        {
+          "name": "directDebit",
+          "type": "string",
+          "location": "body",
+          "description": "If this object is provided, the invoice will be marked for direct debit with the provided details."
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "location": "body",
+          "description": "If this object is provided, the invoice will be e-mailed to the relation immediately. Error codes FACT_EMAIL_005 Something went wrong while attaching files to the email."
+        },
+        {
+          "name": "emailTemplateId",
+          "type": "int",
+          "location": "body",
+          "description": "The ID of an email template. Error codes FACT_020 Email template not found."
+        },
+        {
+          "name": "inExVat",
+          "type": "string",
+          "location": "body",
+          "description": "Indicates if the amount on the invoice is including (`IN`) or excluding (`EX`) VAT. The corresponding value will be calculated based on the VAT code. If left empty the 'EX' option will be used Error codes FACT_010 Invoice VAT must be IN or EX."
+        },
+        {
+          "name": "invoiceNumber",
+          "type": "string",
+          "location": "body",
+          "description": "Invoice number. Must end with a number. If empty, we will create a new number. Error codes FACT_006 Invoice number is missing. FACT_007 Invoice number is too long. FACT_008 Invoice number is invalid. FACT_009 Invoice number does not end with a digit. FACT_101 Invoice number is in use."
+        },
+        {
+          "name": "items",
+          "type": "array",
+          "location": "body",
+          "description": "At least one invoice item is required. Error codes FACT_004 Total invoice amount too high. FACT_005 Total invoice amount too low. FACT_019 Invoice items are missing. FACT_025 Too many items.",
+          "required": true
+        },
+        {
+          "name": "mutation",
+          "type": "string",
+          "location": "body",
+          "description": "If this object is provided, the invoice will also be processed as a new mutation. Error codes FACT_VERWERK_001 Invoice date resides in a closed period."
+        },
+        {
+          "name": "print",
+          "type": "bool",
+          "location": "body",
+          "description": "Determines whether the invoice should be prepared for printing."
+        },
+        {
+          "name": "reference",
+          "type": "string",
+          "location": "body",
+          "description": "Reference of the invoice. Error codes FACT_014 Payment reference is too long."
+        },
+        {
+          "name": "relationId",
+          "type": "int",
+          "location": "body",
+          "description": "The ID of a relation. Error codes FACT_001 Relation ID is missing. FACT_002 Relation not found. FACT_003 Relation is inactive. FACT_EMAIL_001 Relation email is missing. FACT_EMAIL_002 Relation email is invalid. FACT_EMAIL_003 Relation email for invoices is invalid. FACT_EMAIL_004 Relation email for reminders is invalid. FACT_EMAIL_007 Relation email is missing.",
+          "required": true
+        },
+        {
+          "name": "templateId",
+          "type": "int",
+          "location": "body",
+          "description": "Error codes FACT_018 Invoice template not found.",
+          "required": true
+        },
+        {
+          "name": "termOfPayment",
+          "type": "int",
+          "location": "body",
+          "description": "Error codes FACT_015 Term of payment is missing. FACT_016 Term of payment out of range.",
+          "required": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "location": "body",
+          "description": "Text of the invoice. Error codes FACT_017 Invoice text is too long."
+        }
+      ]
+    },
+    {
+      "name": "invoice_get",
+      "description": "Search for invoices. Optional: limit, offset, invoiceNumber (plus 2 more). Returns array of InvoicesResponseDto.",
+      "method": "GET",
+      "path": "/v1/invoice",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "invoiceNumber",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieve the invoice with this number."
+        },
+        {
+          "name": "relationId",
+          "type": "int",
+          "location": "query",
+          "description": "Only retrieve invoices from this relation."
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieve invoices on this date."
+        }
+      ]
+    },
+    {
+      "name": "invoice_get-id",
+      "description": "Get an invoice. Required: id. Returns array of InvoiceItem.",
+      "method": "GET",
+      "path": "/v1/invoice/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "invoicetemplate_get-invoice-templates",
+      "description": "Get all invoice templates. Optional: limit, offset, name (plus 2 more). Returns array of InvoiceTemplateDto.",
+      "method": "GET",
+      "path": "/v1/invoicetemplate",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "query",
+          "description": "Name of the invoice template."
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "location": "query",
+          "description": "Template type. Editor (`E`) or advanced (`A`)."
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "location": "query",
+          "description": "Whether the invoice template is active."
+        }
+      ]
+    },
+    {
+      "name": "ledger_create",
+      "description": "Create a new ledger. Required: code, description. Optional: category, group. Returns the new CreatedLedger.",
+      "method": "POST",
+      "path": "/v1/ledger",
+      "params": [
+        {
+          "name": "category",
+          "type": "string",
+          "location": "body",
+          "description": "A list of ledger categories is displayed below. Only these values may be used in `POST` and `PATCH` operations: `['BAL', 'VW', 'FIN', 'DEB', 'CRED']`. | Value | Description | |---|---| | BAL | Balance | | VW | Profit and loss | | AF6 | Turnover tax low rate | | AF19 | Turnover tax high rate | | AFOVERIG | Turnover tax other | | VOOR | Input tax | | BTWRC | VAT current account | | FIN | Liquid Assets | | DEB | Debtors | | CRED | Creditors | | AF | Turnover tax |"
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the ledger. Error codes LEDG_001 Code is missing. LEDG_002 Code is too long.",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "body",
+          "description": "The description of the ledger. Error codes LEDG_003 Description is missing. LEDG_004 Description is too long.",
+          "required": true
+        },
+        {
+          "name": "group",
+          "type": "string",
+          "location": "body",
+          "description": "The group of the ledger. Error codes LEDG_007 Group is missing."
+        }
+      ]
+    },
+    {
+      "name": "ledger_get",
+      "description": "Get all ledgers. Optional: limit, offset, code (plus 1 more). Returns array of LedgersResponseDto.",
+      "method": "GET",
+      "path": "/v1/ledger",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "query",
+          "description": "The code of the ledger."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "The category of the ledger."
+        }
+      ]
+    },
+    {
+      "name": "ledger_get-balances",
+      "description": "Get the balances on all ledgers with optional filters. Optional: costCenterId, from, to. Returns array of LedgerBalanceResponseDto.",
+      "method": "GET",
+      "path": "/v1/ledger/balances",
+      "params": [
+        {
+          "name": "costCenterId",
+          "type": "int",
+          "location": "query",
+          "description": "The ID of the cost center."
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "location": "query",
+          "description": "Show the balance starting from this date. When provided, the resulting balance is the difference over the period, rather than the actual balance."
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "location": "query",
+          "description": "Shows the active balance at this date. This date is inclusive."
+        }
+      ]
+    },
+    {
+      "name": "ledger_get-id",
+      "description": "Get a ledger. Required: id. Returns the Ledger.",
+      "method": "GET",
+      "path": "/v1/ledger/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "ledger_update",
+      "description": "Update a ledger. Required: id. Optional: category, code, description (plus 1 more). Partial update.",
+      "method": "PATCH",
+      "path": "/v1/ledger/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "body",
+          "description": "A list of ledger categories is displayed below. Only these values may be used in `POST` and `PATCH` operations: `['BAL', 'VW', 'FIN', 'DEB', 'CRED']`. | Value | Description | |---|---| | BAL | Balance | | VW | Profit and loss | | AF6 | Turnover tax low rate | | AF19 | Turnover tax high rate | | AFOVERIG | Turnover tax other | | VOOR | Input tax | | BTWRC | VAT current account | | FIN | Liquid Assets | | DEB | Debtors | | CRED | Creditors | | AF | Turnover tax |"
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the ledger. Error codes LEDG_001 Code is missing. LEDG_002 Code is too long."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "body",
+          "description": "The description of the ledger. Error codes LEDG_003 Description is missing. LEDG_004 Description is too long."
+        },
+        {
+          "name": "group",
+          "type": "string",
+          "location": "body",
+          "description": "The group of the ledger. Error codes LEDG_007 Group is missing."
+        }
+      ]
+    },
+    {
+      "name": "ledger_balance_get",
+      "description": "Get the balance on the given ledger with optional filters. Required: id. Optional: costCenterId, from, to. Returns the LedgerBalance.",
+      "method": "GET",
+      "path": "/v1/ledger/{id}/balance",
+      "params": [
+        {
+          "name": "costCenterId",
+          "type": "int",
+          "location": "query",
+          "description": "The ID of the cost center."
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "location": "query",
+          "description": "Show the balance starting from this date. When provided, the resulting balance is the difference over the period, rather than the actual balance."
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "location": "query",
+          "description": "Shows the active balance at this date. This date is inclusive."
+        },
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "member_create",
+      "description": "Create a new member (only available to clubs or associations). Required: name. Optional: address, bic, city (plus 30 more). Returns the new MembersResponse.",
+      "method": "POST",
+      "path": "/v1/member",
+      "params": [
+        {
+          "name": "address",
+          "type": "string",
+          "location": "body",
+          "description": "The primary address of the member. Error codes MEM_011 Address is too long."
+        },
+        {
+          "name": "bic",
+          "type": "string",
+          "location": "body",
+          "description": "The BIC number of the member. Error codes MEM_032 BIC is too long."
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "location": "body",
+          "description": "The primary city of the member. Error codes MEM_013 City is too long."
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "location": "body",
+          "description": "The primary country of the member. Error codes MEM_014 Country is too long."
+        },
+        {
+          "name": "doNotReceiveNewsletters",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the member will receive newsletters or not."
+        },
+        {
+          "name": "emailAddress",
+          "type": "string",
+          "location": "body",
+          "description": "The email address of the member. Error codes MEM_022 Email is too long. MEM_023 Email is invalid."
+        },
+        {
+          "name": "emailAddressInvoice",
+          "type": "string",
+          "location": "body",
+          "description": "The invoice email address of the member. Error codes MEM_024 Email invoice is too long. MEM_025 Email invoice is invalid."
+        },
+        {
+          "name": "emailAddressReminder",
+          "type": "string",
+          "location": "body",
+          "description": "The reminder email address of the member. Error codes MEM_026 Email reminder is too long. MEM_027 Email reminder is invalid."
+        },
+        {
+          "name": "faxNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The fax number of the member. Error codes MEM_021 Fax is too long."
+        },
+        {
+          "name": "freeText1",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_037 Free text 1 is too long."
+        },
+        {
+          "name": "freeText10",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_046 Free text 10 is too long."
+        },
+        {
+          "name": "freeText2",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_038 Free text 2 is too long."
+        },
+        {
+          "name": "freeText3",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_039 Free text 3 is too long."
+        },
+        {
+          "name": "freeText4",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_040 Free text 4 is too long."
+        },
+        {
+          "name": "freeText5",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_041 Free text 5 is too long."
+        },
+        {
+          "name": "freeText6",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_042 Free text 6 is too long."
+        },
+        {
+          "name": "freeText7",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_043 Free text 7 is too long."
+        },
+        {
+          "name": "freeText8",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_044 Free text 8 is too long."
+        },
+        {
+          "name": "freeText9",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_045 Free text 9 is too long."
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "location": "body",
+          "description": "Male (`m`), female (`v`) or department ('a') Error codes MEM_004 Gender is invalid (m,v,a)."
+        },
+        {
+          "name": "iban",
+          "type": "string",
+          "location": "body",
+          "description": "The IBAN number of the member. Error codes MEM_007 Iban is invalid. MEM_029 Iban is too long."
+        },
+        {
+          "name": "ledgerId",
+          "type": "int",
+          "location": "body",
+          "description": "The ledger ID of this member. Error codes MEM_048 Ledger not found."
+        },
+        {
+          "name": "mandate",
+          "type": "bool",
+          "location": "body",
+          "description": "Enable or disable mandate."
+        },
+        {
+          "name": "mandateId",
+          "type": "string",
+          "location": "body",
+          "description": "The mandate ID of this member. Error codes MEM_034 Mandate ID is too long."
+        },
+        {
+          "name": "mandateSignedDate",
+          "type": "object",
+          "location": "body",
+          "description": "The signing date of the mandate for this member."
+        },
+        {
+          "name": "mandateType",
+          "type": "string",
+          "location": "body",
+          "description": "one-time (`E`) or continuous (`D`) Error codes MEM_033 Mandate type is too long. MEM_051 Mandate type is invalid (E,D)."
+        },
+        {
+          "name": "memberNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the member. Auto-generated if empty. Error codes MEM_049 Member number already exists. MEM_005 Member number is invalid. MEM_006 Member number is too long."
+        },
+        {
+          "name": "mobilePhoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The mobile phone number of the member. Error codes MEM_020 Mobile is too long."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "body",
+          "description": "The name of the member. Error codes MEM_002 Name is mandatory. MEM_003 Name is too long.",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "location": "body",
+          "description": "The note of the member."
+        },
+        {
+          "name": "phoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The phone number of the member. Error codes MEM_019 Phone is too long."
+        },
+        {
+          "name": "postalCode",
+          "type": "string",
+          "location": "body",
+          "description": "The primary postal code of the member. Error codes MEM_012 Postal code is too long."
+        },
+        {
+          "name": "salutation",
+          "type": "string",
+          "location": "body",
+          "description": "The salutation of the member. Error codes MEM_010 Salutation is too long."
+        },
+        {
+          "name": "termOfPayment",
+          "type": "int",
+          "location": "body",
+          "description": "The payment term of the member. Error codes MEM_030 Term of payment too low. MEM_031 Term of payment too high."
+        }
+      ]
+    },
+    {
+      "name": "member_get",
+      "description": "Get all members (only available to clubs or associations). Optional: limit, offset, memberNumber (plus 3 more). Returns array of MembersResponseDto.",
+      "method": "GET",
+      "path": "/v1/member",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "memberNumber",
+          "type": "string",
+          "location": "query",
+          "description": "The number of the member."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves members with this name."
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves members with this e-mailadress."
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves members from this city."
+        }
+      ]
+    },
+    {
+      "name": "member_get-id",
+      "description": "Get a member (only available to clubs or associations). Required: id. Returns the Member.",
+      "method": "GET",
+      "path": "/v1/member/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "member_update",
+      "description": "Update an existing member (only available to clubs or associations). Required: id, name. Optional: address, bic, city (plus 30 more). Partial update.",
+      "method": "PATCH",
+      "path": "/v1/member/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        },
+        {
+          "name": "address",
+          "type": "string",
+          "location": "body",
+          "description": "The primary address of the member. Error codes MEM_011 Address is too long."
+        },
+        {
+          "name": "bic",
+          "type": "string",
+          "location": "body",
+          "description": "The BIC number of the member. Error codes MEM_032 BIC is too long."
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "location": "body",
+          "description": "The primary city of the member. Error codes MEM_013 City is too long."
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "location": "body",
+          "description": "The primary country of the member. Error codes MEM_014 Country is too long."
+        },
+        {
+          "name": "doNotReceiveNewsletters",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the member will receive newsletters or not."
+        },
+        {
+          "name": "emailAddress",
+          "type": "string",
+          "location": "body",
+          "description": "The email address of the member. Error codes MEM_022 Email is too long. MEM_023 Email is invalid."
+        },
+        {
+          "name": "emailAddressInvoice",
+          "type": "string",
+          "location": "body",
+          "description": "The invoice email address of the member. Error codes MEM_024 Email invoice is too long. MEM_025 Email invoice is invalid."
+        },
+        {
+          "name": "emailAddressReminder",
+          "type": "string",
+          "location": "body",
+          "description": "The reminder email address of the member. Error codes MEM_026 Email reminder is too long. MEM_027 Email reminder is invalid."
+        },
+        {
+          "name": "faxNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The fax number of the member. Error codes MEM_021 Fax is too long."
+        },
+        {
+          "name": "freeText1",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_037 Free text 1 is too long."
+        },
+        {
+          "name": "freeText10",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_046 Free text 10 is too long."
+        },
+        {
+          "name": "freeText2",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_038 Free text 2 is too long."
+        },
+        {
+          "name": "freeText3",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_039 Free text 3 is too long."
+        },
+        {
+          "name": "freeText4",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_040 Free text 4 is too long."
+        },
+        {
+          "name": "freeText5",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_041 Free text 5 is too long."
+        },
+        {
+          "name": "freeText6",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_042 Free text 6 is too long."
+        },
+        {
+          "name": "freeText7",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_043 Free text 7 is too long."
+        },
+        {
+          "name": "freeText8",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_044 Free text 8 is too long."
+        },
+        {
+          "name": "freeText9",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the member. Error codes MEM_045 Free text 9 is too long."
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "location": "body",
+          "description": "Male (`m`), female (`v`) or department ('a') Error codes MEM_004 Gender is invalid (m,v,a)."
+        },
+        {
+          "name": "iban",
+          "type": "string",
+          "location": "body",
+          "description": "The IBAN number of the member. Error codes MEM_007 Iban is invalid. MEM_029 Iban is too long."
+        },
+        {
+          "name": "ledgerId",
+          "type": "int",
+          "location": "body",
+          "description": "The ledger ID of this member. Error codes MEM_048 Ledger not found."
+        },
+        {
+          "name": "mandate",
+          "type": "bool",
+          "location": "body",
+          "description": "Enable or disable mandate."
+        },
+        {
+          "name": "mandateId",
+          "type": "string",
+          "location": "body",
+          "description": "The mandate ID of this member. Error codes MEM_034 Mandate ID is too long."
+        },
+        {
+          "name": "mandateSignedDate",
+          "type": "object",
+          "location": "body",
+          "description": "The signing date of the mandate for this member."
+        },
+        {
+          "name": "mandateType",
+          "type": "string",
+          "location": "body",
+          "description": "one-time (`E`) or continuous (`D`) Error codes MEM_033 Mandate type is too long. MEM_051 Mandate type is invalid (E,D)."
+        },
+        {
+          "name": "memberNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the member. Auto-generated if empty. Error codes MEM_049 Member number already exists. MEM_005 Member number is invalid. MEM_006 Member number is too long."
+        },
+        {
+          "name": "mobilePhoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The mobile phone number of the member. Error codes MEM_020 Mobile is too long."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "body",
+          "description": "The name of the member. Error codes MEM_002 Name is mandatory. MEM_003 Name is too long.",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "location": "body",
+          "description": "The note of the member."
+        },
+        {
+          "name": "phoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The phone number of the member. Error codes MEM_019 Phone is too long."
+        },
+        {
+          "name": "postalCode",
+          "type": "string",
+          "location": "body",
+          "description": "The primary postal code of the member. Error codes MEM_012 Postal code is too long."
+        },
+        {
+          "name": "salutation",
+          "type": "string",
+          "location": "body",
+          "description": "The salutation of the member. Error codes MEM_010 Salutation is too long."
+        },
+        {
+          "name": "termOfPayment",
+          "type": "int",
+          "location": "body",
+          "description": "The payment term of the member. Error codes MEM_030 Term of payment too low. MEM_031 Term of payment too high."
+        }
+      ]
+    },
+    {
+      "name": "mutation_create",
+      "description": "Create a new mutation. Required: date, ledgerId, type. Optional: checkPaymentReference, description, entryNumber (plus 6 more). Returns the new CreatedMutation.",
+      "method": "POST",
+      "path": "/v1/mutation",
+      "params": [
+        {
+          "name": "checkPaymentReference",
+          "type": "bool",
+          "location": "body",
+          "description": "If true, the provided `paymentReference` will be validated for uniqueness."
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "body",
+          "description": "The date of the mutation. Error codes MUT_003 Date is missing.",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "body",
+          "description": "The description of the mutation."
+        },
+        {
+          "name": "entryNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The entry of the mutation."
+        },
+        {
+          "name": "inExVat",
+          "type": "string",
+          "location": "body",
+          "description": "Indicates if the amount on mutation rows is including (`IN`) or excluding (`EX`) VAT. The corresponding value will be calculated based on the VAT code. Error codes MUT_017 In/Ex VAT must be 'IN' or 'EX'. MUTA_005 In/Ex VAT is missing."
+        },
+        {
+          "name": "invoiceNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The invoice number of the mutation. Error codes MUT_018 Invoice number is too long. MUT_019 Invoice number already exists. MUT_002 Invoice number is missing."
+        },
+        {
+          "name": "ledgerId",
+          "type": "int",
+          "location": "body",
+          "description": "The ledger ID of the mutation. Error codes MUTA_001 Ledger id is missing. MUT_007 Unknown ledger for mutation.",
+          "required": true
+        },
+        {
+          "name": "paymentReference",
+          "type": "string",
+          "location": "body",
+          "description": "The payment reference of the mutation."
+        },
+        {
+          "name": "relationId",
+          "type": "int",
+          "location": "body",
+          "description": "The relation id of the mutation. Error codes MUT_012 Relation is missing. MUT_013 Relation not found."
+        },
+        {
+          "name": "rows",
+          "type": "array",
+          "location": "body",
+          "description": "The rows of the mutation. Error codes MUT_100 Rows are missing. MUT_101 Too many rows."
+        },
+        {
+          "name": "termOfPayment",
+          "type": "int",
+          "location": "body",
+          "description": "The term of payment from `date`, in days. Error codes MUT_016 Term of payment is prohibited."
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "location": "body",
+          "description": "A list of mutation types is displayed below. | Value | Description | |---|---| | 1 | Invoice received | | 2 | Invoice sent | | 3 | Invoice payment received | | 4 | Invoice payment sent | | 5 | Money received | | 6 | Money sent | | 7 | General journal entry |",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "mutation_get",
+      "description": "Get all mutations. Optional: limit, offset, type (plus 4 more). Returns array of MutationsResponseDto.",
+      "method": "GET",
+      "path": "/v1/mutation",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "type",
+          "type": "int",
+          "location": "query",
+          "description": "Only retrieves mutations of this type."
+        },
+        {
+          "name": "id",
+          "type": "int",
+          "location": "query",
+          "description": "Only retrieves mutations with this number."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves mutations with this description."
+        },
+        {
+          "name": "invoiceNumber",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves mutations with this invoice number."
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves mutations with this date."
+        }
+      ]
+    },
+    {
+      "name": "mutation_get-id",
+      "description": "Get a mutation by id. Required: id. Returns the Mutation.",
+      "method": "GET",
+      "path": "/v1/mutation/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "mutation_get-outstanding-invoices",
+      "description": "Get all outstanding invoices. Required: credDeb. Optional: limit, offset, invoiceNumber. Returns array of OutstandingInvoiceDto.",
+      "method": "GET",
+      "path": "/v1/mutation/invoice/outstanding",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "credDeb",
+          "type": "string",
+          "location": "query",
+          "description": "Retrieve creditors (`C`) or debtors (`D`).",
+          "required": true
+        },
+        {
+          "name": "invoiceNumber",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieve invoices with this number."
+        }
+      ]
+    },
+    {
+      "name": "product_create",
+      "description": "Create a new product. Required: code, description, ledgerId, vat. Optional: active (default: true), costCenterId, groupId (plus 5 more). Returns the new CreateProduct.",
+      "method": "POST",
+      "path": "/v1/product",
+      "params": [
+        {
+          "name": "active",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the product is active."
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the product. Error codes ART_004 Product Code is missing. ART_007 Product Code is too long.",
+          "required": true
+        },
+        {
+          "name": "costCenterId",
+          "type": "int",
+          "location": "body",
+          "description": "The cost center ID of the product. Error codes ART_010 Product Cost center is inactive. ART_015 Product cost center could not be found."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "body",
+          "description": "The description of the product. Error codes ART_005 Product Description is missing.",
+          "required": true
+        },
+        {
+          "name": "groupId",
+          "type": "int",
+          "location": "body",
+          "description": "The group ID of the product. Error codes ART_012 Product Group could not be found."
+        },
+        {
+          "name": "inStockManagement",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the product will be Included in automatic inventory management."
+        },
+        {
+          "name": "ledgerId",
+          "type": "int",
+          "location": "body",
+          "description": "The ledger ID of the product. Error codes ART_006 Product Ledger ID is missing. ART_009 Product Ledger could not be found. ART_028 Ledger category must be 'BAL' or 'VW'.",
+          "required": true
+        },
+        {
+          "name": "priceExcl",
+          "type": "float",
+          "location": "body",
+          "description": "The price (excluding VAT) of the product. This field can not be combined with `priceIncl`. Error codes ART_018 Either priceExcl or priceIncl is required. ART_019 Both priceExcl and priceIncl are required with current VAT code. ART_024 The value of PriceExcl exceeds the maximum value of 999999999999.00. ART_026 The value of PriceIncl after applying VAT exceeds the maximum value of 999999999999.00. ART_029 The value of PriceExcl is below the minimum value of -999999999999.00. ART_031 The value of PriceIncl after applying VAT is below the minimum value of -999999999999.00."
+        },
+        {
+          "name": "priceIncl",
+          "type": "float",
+          "location": "body",
+          "description": "The price (including VAT) of the product. This field can not be combined with `priceExcl`. Error codes ART_016 priceIncl cannot have a value when priceExcl is passed. ART_018 Either priceExcl or priceIncl is required. ART_019 Both priceExcl and priceIncl are required with current VAT code. ART_025 The value of PriceIncl exceeds the maximum value of 999999999999.00. ART_030 The value of PriceIncl is below the minimum value of -999999999999.00."
+        },
+        {
+          "name": "purchasePriceExcl",
+          "type": "float",
+          "location": "body",
+          "description": "The purchase price (excluding VAT) of the product. Error codes ART_027 The value of PurchasePriceExcl exceeds the maximum value of 999999999999.00. ART_032 The value of PurchasePriceExcl is below the minimum value of -999999999999.00."
+        },
+        {
+          "name": "unitId",
+          "type": "int",
+          "location": "body",
+          "description": "The unit ID of the product. Error codes ART_011 Product Unit could not be found."
+        },
+        {
+          "name": "vat",
+          "type": "string",
+          "location": "body",
+          "description": "The VAT code of the product. Only supports VAT codes of type 'Sale'. Error codes ART_013 Product VAT code could not be found. ART_017 Product VAT code is required.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "product_delete",
+      "description": "Permanently delete a product by id. Required: id (the product's numeric identifier, in the URL path). Returns 204 No Content on success, 404 if the id doesn't match an existing product, or 400 if id is malformed. Irreversible — there is no undo or restore endpoint for products. Destructive.",
+      "method": "DELETE",
+      "path": "/v1/product/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "product_get",
+      "description": "Get all products. Optional: limit, offset, code (plus 1 more). Returns array of ProductsResponseDto.",
+      "method": "GET",
+      "path": "/v1/product",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "query",
+          "description": "The code of the product."
+        },
+        {
+          "name": "groupCode",
+          "type": "string",
+          "location": "query",
+          "description": "The product group code."
+        }
+      ]
+    },
+    {
+      "name": "product_get-group",
+      "description": "Get all product groups. Returns array of ProductGroupDto.",
+      "method": "GET",
+      "path": "/v1/product/groups",
+      "params": []
+    },
+    {
+      "name": "product_get-id",
+      "description": "Get a product. Required: id. Returns the Product.",
+      "method": "GET",
+      "path": "/v1/product/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "product_update",
+      "description": "Update a product. Required: id. Optional: active (default: true), code, costCenterId (plus 10 more). Partial update.",
+      "method": "PATCH",
+      "path": "/v1/product/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        },
+        {
+          "name": "active",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the product is active."
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the product. Error codes ART_004 Product Code is missing. ART_007 Product Code is too long."
+        },
+        {
+          "name": "costCenterId",
+          "type": "int",
+          "location": "body",
+          "description": "The cost center ID of the product. Error codes ART_010 Product Cost center is inactive. ART_015 Product cost center could not be found."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "location": "body",
+          "description": "The description of the product. Error codes ART_005 Product Description is missing."
+        },
+        {
+          "name": "groupId",
+          "type": "int",
+          "location": "body",
+          "description": "The group ID of the product. Error codes ART_012 Product Group could not be found."
+        },
+        {
+          "name": "inStockManagement",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the product will be Included in automatic inventory management."
+        },
+        {
+          "name": "ledgerId",
+          "type": "int",
+          "location": "body",
+          "description": "The ledger ID of the product. Error codes ART_006 Product Ledger ID is missing. ART_009 Product Ledger could not be found. ART_028 Ledger category must be 'BAL' or 'VW'."
+        },
+        {
+          "name": "priceExcl",
+          "type": "float",
+          "location": "body",
+          "description": "The price (excluding VAT) of the product. This field can not be combined with `priceIncl`. Error codes ART_021 priceExcl cannot be null or empty. ART_024 The value of PriceExcl exceeds the maximum value of 999999999999.00. ART_026 The value of PriceIncl after applying VAT exceeds the maximum value of 999999999999.00. ART_029 The value of PriceExcl is below the minimum value of -999999999999.00. ART_031 The value of PriceIncl after applying VAT is below the minimum value of -999999999999.00."
+        },
+        {
+          "name": "priceIncl",
+          "type": "float",
+          "location": "body",
+          "description": "The price (including VAT) of the product. This field can not be combined with `priceExcl`. Error codes ART_016 priceIncl cannot have a value when priceExcl is passed. ART_020 priceIncl cannot be null or empty. ART_025 The value of PriceIncl exceeds the maximum value of 999999999999.00. ART_030 The value of PriceIncl is below the minimum value of -999999999999.00."
+        },
+        {
+          "name": "purchasePriceExcl",
+          "type": "float",
+          "location": "body",
+          "description": "The purchase price (excluding VAT) of the product. Error codes ART_027 The value of PurchasePriceExcl exceeds the maximum value of 999999999999.00. ART_032 The value of PurchasePriceExcl is below the minimum value of -999999999999.00."
+        },
+        {
+          "name": "unitId",
+          "type": "int",
+          "location": "body",
+          "description": "The unit ID of the product. Error codes ART_011 Product Unit could not be found."
+        },
+        {
+          "name": "updateSubscriptions",
+          "type": "string",
+          "location": "body",
+          "description": "Specifies the level of changes to be applied to existing subscriptions when a product is updated. | Value | Description | |---|---| | 0 | No changes will be applied. | | 1 | Only price changes will be applied. | | 2 | All changes will be applied. |"
+        },
+        {
+          "name": "vat",
+          "type": "string",
+          "location": "body",
+          "description": "The VAT code of the product. Only supports VAT codes of type 'Sale'. Error codes ART_013 Product VAT code could not be found. ART_022 VAT code cannot be null or empty."
+        }
+      ]
+    },
+    {
+      "name": "relation_create",
+      "description": "Create a new relation. Required: name. Optional: address, address2, bic (plus 40 more). Returns the new CreatedRelation.",
+      "method": "POST",
+      "path": "/v1/relation",
+      "params": [
+        {
+          "name": "address",
+          "type": "string",
+          "location": "body",
+          "description": "The primary address of the relation. Error codes REL_011 Address is too long."
+        },
+        {
+          "name": "address2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary address of the relation. Error codes REL_015 Address 2 is too long."
+        },
+        {
+          "name": "bic",
+          "type": "string",
+          "location": "body",
+          "description": "The BIC number of the relation. Error codes REL_032 BIC is too long."
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "location": "body",
+          "description": "The primary city of the relation. Error codes REL_013 City is too long."
+        },
+        {
+          "name": "city2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary city of the relation. Error codes REL_017 City 2 is too long."
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the relation. Auto-generated if empty. Error codes REL_049 Code already exists. REL_005 Code is invalid. REL_006 Code is too long."
+        },
+        {
+          "name": "companyRegistrationNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The company registration number of the relation. Error codes REL_008 Company registration number must be numeric. REL_050 Company registration number is too long."
+        },
+        {
+          "name": "contact",
+          "type": "string",
+          "location": "body",
+          "description": "The contact of the relation. Error codes REL_009 Contact is too long."
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "location": "body",
+          "description": "The primary country of the relation. Error codes REL_014 Country is too long."
+        },
+        {
+          "name": "country2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary country of the relation. Error codes REL_018 Country 2 is too long."
+        },
+        {
+          "name": "doNotReceiveNewsletters",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the relation will receive newsletters or not."
+        },
+        {
+          "name": "emailAddress",
+          "type": "string",
+          "location": "body",
+          "description": "The email address of the relation. Error codes REL_022 Email is too long. REL_023 Email is invalid."
+        },
+        {
+          "name": "emailAddressInvoice",
+          "type": "string",
+          "location": "body",
+          "description": "The invoice email address of the relation. Error codes REL_024 Email invoice is too long. REL_025 Email invoice is invalid."
+        },
+        {
+          "name": "emailAddressReminder",
+          "type": "string",
+          "location": "body",
+          "description": "The reminder email address of the relation. Error codes REL_026 Email reminder is too long. REL_027 Email reminder is invalid."
+        },
+        {
+          "name": "faxNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The fax number of the relation. Error codes REL_021 Fax is too long."
+        },
+        {
+          "name": "freeText1",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_037 Free text 1 is too long."
+        },
+        {
+          "name": "freeText10",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_046 Free text 10 is too long."
+        },
+        {
+          "name": "freeText2",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_038 Free text 2 is too long."
+        },
+        {
+          "name": "freeText3",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_039 Free text 3 is too long."
+        },
+        {
+          "name": "freeText4",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_040 Free text 4 is too long."
+        },
+        {
+          "name": "freeText5",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_041 Free text 5 is too long."
+        },
+        {
+          "name": "freeText6",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_042 Free text 6 is too long."
+        },
+        {
+          "name": "freeText7",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_043 Free text 7 is too long."
+        },
+        {
+          "name": "freeText8",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_044 Free text 8 is too long."
+        },
+        {
+          "name": "freeText9",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_045 Free text 9 is too long."
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "location": "body",
+          "description": "Male (`m`) or female (`v`) or department (`a`) Error codes REL_004 Gender is invalid (m,v,a)."
+        },
+        {
+          "name": "iban",
+          "type": "string",
+          "location": "body",
+          "description": "The IBAN number of the relation. Error codes REL_007 Iban is invalid. REL_029 Iban is too long."
+        },
+        {
+          "name": "inactive",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the relation is inactive."
+        },
+        {
+          "name": "ledgerId",
+          "type": "int",
+          "location": "body",
+          "description": "The ledger ID of this relation. Error codes REL_048 Ledger not found."
+        },
+        {
+          "name": "mandate",
+          "type": "bool",
+          "location": "body",
+          "description": "Enable or disable mandate."
+        },
+        {
+          "name": "mandateId",
+          "type": "string",
+          "location": "body",
+          "description": "The mandate ID of this relation. Error codes REL_034 Mandate ID is too long."
+        },
+        {
+          "name": "mandateSignedDate",
+          "type": "object",
+          "location": "body",
+          "description": "The signing date of the mandate for this relation."
+        },
+        {
+          "name": "mandateType",
+          "type": "string",
+          "location": "body",
+          "description": "one-time (`E`) or continuous (`D`) Error codes REL_033 Mandate type is too long. REL_051 Mandate type is invalid (E,D)."
+        },
+        {
+          "name": "mobilePhoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The mobile phone number of the relation. Error codes REL_020 Mobile is too long."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "body",
+          "description": "The (company) name of the relation. Error codes REL_002 Name is mandatory. REL_003 Name is too long.",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "location": "body",
+          "description": "The note of the relation."
+        },
+        {
+          "name": "phoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The phone number of the relation. Error codes REL_019 Phone is too long."
+        },
+        {
+          "name": "postalCode",
+          "type": "string",
+          "location": "body",
+          "description": "The primary postal code of the relation. Error codes REL_012 Postal code is too long."
+        },
+        {
+          "name": "postalCode2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary postal code of the relation. Error codes REL_016 Postal code 2 is too long."
+        },
+        {
+          "name": "salutation",
+          "type": "string",
+          "location": "body",
+          "description": "The salutation of the relation. Error codes REL_010 Salutation is too long."
+        },
+        {
+          "name": "termOfPayment",
+          "type": "int",
+          "location": "body",
+          "description": "The payment term of the relation. Error codes REL_030 Term of payment too low. REL_031 Term of payment too high."
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "location": "body",
+          "description": "Business (`B`) or Private (`P`). Defaults to `B` if empty. Error codes REL_001 Relation type is invalid (B,P)."
+        },
+        {
+          "name": "vatNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The VAT number of the relation. Error codes REL_035 VAT number is too long."
+        },
+        {
+          "name": "website",
+          "type": "string",
+          "location": "body",
+          "description": "The website of the relation. Error codes REL_028 Website is too long."
+        }
+      ]
+    },
+    {
+      "name": "relation_get",
+      "description": "Get all relations. Optional: limit, offset, code (plus 5 more). Returns array of RelationsResponseDto.",
+      "method": "GET",
+      "path": "/v1/relation",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "query",
+          "description": "The code of the relation."
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "location": "query",
+          "description": "Business (`B`) or Private (`P`)."
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves relations with this e-mailadress."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves relations with this (company) name."
+        },
+        {
+          "name": "contact",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves relations with this contact information."
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "location": "query",
+          "description": "Only retrieves relations from this primary city."
+        }
+      ]
+    },
+    {
+      "name": "relation_get-id",
+      "description": "Get a relation. Required: id. Returns the Relation.",
+      "method": "GET",
+      "path": "/v1/relation/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "relation_update",
+      "description": "Update an existing relation. Required: id, name. Optional: address, address2, bic (plus 40 more). Partial update.",
+      "method": "PATCH",
+      "path": "/v1/relation/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Id",
+          "required": true
+        },
+        {
+          "name": "address",
+          "type": "string",
+          "location": "body",
+          "description": "The primary address of the relation. Error codes REL_011 Address is too long."
+        },
+        {
+          "name": "address2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary address of the relation. Error codes REL_015 Address 2 is too long."
+        },
+        {
+          "name": "bic",
+          "type": "string",
+          "location": "body",
+          "description": "The BIC number of the relation. Error codes REL_032 BIC is too long."
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "location": "body",
+          "description": "The primary city of the relation. Error codes REL_013 City is too long."
+        },
+        {
+          "name": "city2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary city of the relation. Error codes REL_017 City 2 is too long."
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "body",
+          "description": "The code of the relation. Auto-generated if empty. Error codes REL_049 Code already exists. REL_005 Code is invalid. REL_006 Code is too long."
+        },
+        {
+          "name": "companyRegistrationNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The company registration number of the relation. Error codes REL_008 Company registration number must be numeric. REL_050 Company registration number is too long."
+        },
+        {
+          "name": "contact",
+          "type": "string",
+          "location": "body",
+          "description": "The contact of the relation. Error codes REL_009 Contact is too long."
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "location": "body",
+          "description": "The primary country of the relation. Error codes REL_014 Country is too long."
+        },
+        {
+          "name": "country2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary country of the relation. Error codes REL_018 Country 2 is too long."
+        },
+        {
+          "name": "doNotReceiveNewsletters",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the relation will receive newsletters or not."
+        },
+        {
+          "name": "emailAddress",
+          "type": "string",
+          "location": "body",
+          "description": "The email address of the relation. Error codes REL_022 Email is too long. REL_023 Email is invalid."
+        },
+        {
+          "name": "emailAddressInvoice",
+          "type": "string",
+          "location": "body",
+          "description": "The invoice email address of the relation. Error codes REL_024 Email invoice is too long. REL_025 Email invoice is invalid."
+        },
+        {
+          "name": "emailAddressReminder",
+          "type": "string",
+          "location": "body",
+          "description": "The reminder email address of the relation. Error codes REL_026 Email reminder is too long. REL_027 Email reminder is invalid."
+        },
+        {
+          "name": "faxNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The fax number of the relation. Error codes REL_021 Fax is too long."
+        },
+        {
+          "name": "freeText1",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_037 Free text 1 is too long."
+        },
+        {
+          "name": "freeText10",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_046 Free text 10 is too long."
+        },
+        {
+          "name": "freeText2",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_038 Free text 2 is too long."
+        },
+        {
+          "name": "freeText3",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_039 Free text 3 is too long."
+        },
+        {
+          "name": "freeText4",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_040 Free text 4 is too long."
+        },
+        {
+          "name": "freeText5",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_041 Free text 5 is too long."
+        },
+        {
+          "name": "freeText6",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_042 Free text 6 is too long."
+        },
+        {
+          "name": "freeText7",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_043 Free text 7 is too long."
+        },
+        {
+          "name": "freeText8",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_044 Free text 8 is too long."
+        },
+        {
+          "name": "freeText9",
+          "type": "string",
+          "location": "body",
+          "description": "Free text field for the relation. Error codes REL_045 Free text 9 is too long."
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "location": "body",
+          "description": "Male (`m`) or female (`v`) or department (`a`) Error codes REL_004 Gender is invalid (m,v,a)."
+        },
+        {
+          "name": "iban",
+          "type": "string",
+          "location": "body",
+          "description": "The IBAN number of the relation. Error codes REL_007 Iban is invalid. REL_029 Iban is too long."
+        },
+        {
+          "name": "inactive",
+          "type": "bool",
+          "location": "body",
+          "description": "Whether the relation is inactive."
+        },
+        {
+          "name": "ledgerId",
+          "type": "int",
+          "location": "body",
+          "description": "The ledger ID of this relation. Error codes REL_048 Ledger not found."
+        },
+        {
+          "name": "mandate",
+          "type": "bool",
+          "location": "body",
+          "description": "Enable or disable mandate."
+        },
+        {
+          "name": "mandateId",
+          "type": "string",
+          "location": "body",
+          "description": "The mandate ID of this relation. Error codes REL_034 Mandate ID is too long."
+        },
+        {
+          "name": "mandateSignedDate",
+          "type": "object",
+          "location": "body",
+          "description": "The signing date of the mandate for this relation."
+        },
+        {
+          "name": "mandateType",
+          "type": "string",
+          "location": "body",
+          "description": "one-time (`E`) or continuous (`D`) Error codes REL_033 Mandate type is too long. REL_051 Mandate type is invalid (E,D)."
+        },
+        {
+          "name": "mobilePhoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The mobile phone number of the relation. Error codes REL_020 Mobile is too long."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "body",
+          "description": "The (company) name of the relation. Error codes REL_002 Name is mandatory. REL_003 Name is too long.",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "location": "body",
+          "description": "The note of the relation."
+        },
+        {
+          "name": "phoneNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The phone number of the relation. Error codes REL_019 Phone is too long."
+        },
+        {
+          "name": "postalCode",
+          "type": "string",
+          "location": "body",
+          "description": "The primary postal code of the relation. Error codes REL_012 Postal code is too long."
+        },
+        {
+          "name": "postalCode2",
+          "type": "string",
+          "location": "body",
+          "description": "The secondary postal code of the relation. Error codes REL_016 Postal code 2 is too long."
+        },
+        {
+          "name": "salutation",
+          "type": "string",
+          "location": "body",
+          "description": "The salutation of the relation. Error codes REL_010 Salutation is too long."
+        },
+        {
+          "name": "termOfPayment",
+          "type": "int",
+          "location": "body",
+          "description": "The payment term of the relation. Error codes REL_030 Term of payment too low. REL_031 Term of payment too high."
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "location": "body",
+          "description": "Business (`B`) or Private (`P`). Defaults to `B` if empty. Error codes REL_001 Relation type is invalid (B,P)."
+        },
+        {
+          "name": "vatNumber",
+          "type": "string",
+          "location": "body",
+          "description": "The VAT number of the relation. Error codes REL_035 VAT number is too long."
+        },
+        {
+          "name": "website",
+          "type": "string",
+          "location": "body",
+          "description": "The website of the relation. Error codes REL_028 Website is too long."
+        }
+      ]
+    },
+    {
+      "name": "session_end",
+      "description": "Revoke the current session token, immediately ending the authenticated session. No parameters. Returns 204 No Content on success or 401 if the session is already invalid. After calling this, the CLI must re-authenticate (exchange the long-lived API token for a new session token) before making further API calls. Destructive.",
+      "method": "DELETE",
+      "path": "/v1/session",
+      "params": []
+    },
+    {
+      "name": "session_start",
+      "description": "Start a new session. The response session token can be used as the `Authorization` header. Required: accessToken, source. Returns the new Session.",
+      "method": "POST",
+      "path": "/v1/session",
+      "params": [
+        {
+          "name": "accessToken",
+          "type": "string",
+          "location": "body",
+          "description": "Your secret API-token. Error codes API_SESSION_003 Access token is missing or empty. API_SESSION_004 Access token has expired.",
+          "required": true
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "body",
+          "description": "Code to identify your integration. Error codes API_SESSION_001 Source is missing. API_SESSION_002 Source does not match pattern.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "swagger_get",
+      "description": "Fetch a specific page of e-Boekhouden's raw Swagger/OpenAPI documentation. Required: catchAll (the sub-path under /swagger to retrieve, e.g. a spec file or UI asset name). Returns whatever content the API serves at that sub-path — useful for inspecting the provider's own API metadata directly rather than this CLI's bundled spec.",
+      "method": "GET",
+      "path": "/swagger/{catchAll}",
+      "params": [
+        {
+          "name": "catchAll",
+          "type": "string",
+          "location": "path",
+          "description": "catchAll",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "swagger_list",
+      "description": "Fetch the root of e-Boekhouden's Swagger/OpenAPI documentation endpoint. No parameters. Returns whatever content the API serves at /swagger, typically the Swagger UI or an index of documentation sub-paths. Use swagger_get with a specific catchAll value to fetch one sub-resource directly.",
+      "method": "GET",
+      "path": "/swagger",
+      "params": []
+    },
+    {
+      "name": "unit_get",
+      "description": "Get all units. Optional: limit, offset, singular (plus 1 more). Returns array of UnitDto.",
+      "method": "GET",
+      "path": "/v1/unit",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to retrieve."
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "The number of items to skip."
+        },
+        {
+          "name": "singular",
+          "type": "string",
+          "location": "query",
+          "description": "The singular form for the unit."
+        },
+        {
+          "name": "plural",
+          "type": "string",
+          "location": "query",
+          "description": "The plural form for the unit."
+        }
+      ]
+    }
+  ]
+}

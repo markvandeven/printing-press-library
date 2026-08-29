@@ -1569,6 +1569,23 @@ func (s *Store) UpsertMutation(data json.RawMessage) error {
 
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
+
+	// A list-sync response omits "rows" (line-level VAT detail only
+	// "mutation get-id" returns). Without this, a sync run after a get-id
+	// would silently drop the cached detail and zero out VAT-summary totals.
+	if _, hasRows := obj["rows"]; !hasRows {
+		if existing, err := s.Get("mutation", id); err == nil {
+			if existingObj, err := DecodeJSONObject(existing); err == nil {
+				if rows, ok := existingObj["rows"]; ok {
+					obj["rows"] = rows
+					if merged, err := json.Marshal(obj); err == nil {
+						data = merged
+					}
+				}
+			}
+		}
+	}
+
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err

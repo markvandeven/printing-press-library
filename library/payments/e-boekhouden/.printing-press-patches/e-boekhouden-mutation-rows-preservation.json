@@ -1,0 +1,25 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-mutation-rows-preservation",
+  "applied_at": "2026-08-29",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "fix(e-boekhouden): preserve mutation line-level VAT rows across sync",
+  "reason": "The generated store upsert (ON CONFLICT ... DO UPDATE SET data = excluded.data) unconditionally overwrites the cached record on every write. mutation get-id caches a detail response with line-level VAT rows that the list endpoint (used by sync) omits, so a sync run after a get-id silently dropped the cached rows and zeroed VAT-summary totals. This affected both the single-record UpsertMutation path and the UpsertBatch path that sync actually uses -- the first fix only covered UpsertMutation, and Greptile re-review caught that UpsertBatch bypassed it entirely.",
+  "files": [
+    "internal/store/store.go",
+    "internal/store/upsert_batch_test.go"
+  ],
+  "call_sites": [
+    "func (s *Store) preserveMutationRows(",
+    "s.preserveMutationRows(id, obj, item)"
+  ],
+  "validated_outcome": "go build ./... and go test ./... pass. Added TestUpsertBatch_PreservesMutationRowsAcrossSync, confirmed to fail without the fix and pass with it. Greptile review threads on PR #1867 resolved for both the single-record and batch-path findings.",
+  "deferred_to_upstream": [
+    {
+      "feature": "Generic per-resource store upsert (internal/generator/templates/store.go.tmpl) should not let a thinner list-sync write silently overwrite a richer cached detail write, for any resource type",
+      "reason": "This patch is scoped to the mutation resource type only in e-boekhouden. The underlying pattern -- generic upsert always overwrites the full data blob -- affects every resource with a list/detail response-shape asymmetry across every printed CLI, and needs a real generator design pass (merge-preserve vs. write-provenance tracking vs. something else), not a copy of this local workaround."
+    }
+  ],
+  "upstream_issue": "https://github.com/mvanhorn/cli-printing-press/issues/4427"
+}

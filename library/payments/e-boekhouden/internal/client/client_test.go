@@ -44,6 +44,39 @@ func TestWriteCache_RechmodsExistingFile(t *testing.T) {
 	}
 }
 
+// TestReadCache_RechmodsFreshLegacyFile guards against the read-side gap in
+// the same class of bug TestWriteCache_RechmodsExistingFile covers: a cache
+// entry that is still inside the 5-minute TTL is returned straight from
+// readCache without ever reaching writeCache's chmod, so a fresh pre-upgrade
+// 0o644 entry would otherwise stay world-readable for up to 5 minutes after
+// an upgrade.
+func TestReadCache_RechmodsFreshLegacyFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX permission bits don't map cleanly to Windows ACLs")
+	}
+	t.Parallel()
+
+	dir := t.TempDir()
+	c := &Client{cacheDir: dir}
+
+	cacheFile := filepath.Join(dir, c.cacheKey("/v1/mutations", nil)+".json")
+	if err := os.WriteFile(cacheFile, []byte(`{"fresh": true}`), 0o644); err != nil {
+		t.Fatalf("seed fresh legacy cache file: %v", err)
+	}
+
+	if _, ok := c.readCache("/v1/mutations", nil); !ok {
+		t.Fatalf("readCache: expected a hit on a fresh file")
+	}
+
+	info, err := os.Stat(cacheFile)
+	if err != nil {
+		t.Fatalf("stat cache file: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("cache file mode = %o, want 0600 (a fresh legacy 0644 entry must be re-chmodded on a cache-hit read, not only on rewrite)", got)
+	}
+}
+
 func TestTruncateBody(t *testing.T) {
 	t.Parallel()
 

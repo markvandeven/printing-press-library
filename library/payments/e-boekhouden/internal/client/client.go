@@ -241,6 +241,12 @@ func (c *Client) readCache(path string, params map[string]string) (json.RawMessa
 	if err != nil || time.Since(info.ModTime()) > 5*time.Minute {
 		return nil, false
 	}
+	// A cache-hit on a file still inside the TTL never reaches writeCache's
+	// chmod, so a fresh legacy 0o644 entry written before an upgrade would
+	// otherwise stay world-readable for up to 5 minutes after the upgrade.
+	if info.Mode().Perm() != 0o600 {
+		os.Chmod(cacheFile, 0o600)
+	}
 	data, err := os.ReadFile(cacheFile)
 	if err != nil {
 		return nil, false

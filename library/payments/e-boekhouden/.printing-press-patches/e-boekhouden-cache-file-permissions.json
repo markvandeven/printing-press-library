@@ -4,22 +4,27 @@
   "applied_at": "2026-08-29",
   "base_run_id": "20260829-182823",
   "base_printing_press_version": "4.22.0",
-  "summary": "fix(e-boekhouden): tighten cache directory/file permissions and re-chmod on rewrite",
-  "reason": "This CLI was printed at generator v4.22.0, before the cache-permission hardening in cli-printing-press (commit ae1f46baf, 2026-07-20) landed upstream. writeCache used 0o755/0o644 (world-readable), exposing cached invoice/relation/ledger/mutation responses to other local users on a shared machine. Separately, os.WriteFile's perm argument only applies when creating a file, so even after tightening the mode, an existing cache file written under the old 0o644 code stayed world-readable across an upgrade until manually deleted.",
+  "summary": "fix(e-boekhouden): tighten cache directory/file permissions and re-chmod on both rewrite and cache-hit read",
+  "reason": "This CLI was printed at generator v4.22.0, before the cache-permission hardening in cli-printing-press (commit ae1f46baf, 2026-07-20) landed upstream. writeCache used 0o755/0o644 (world-readable), exposing cached invoice/relation/ledger/mutation responses to other local users on a shared machine. Separately, os.WriteFile's perm argument only applies when creating a file, so even after tightening the mode, an existing cache file written under the old 0o644 code stayed world-readable across an upgrade until manually deleted. A third gap surfaced by a later Greptile pass on PR #1867: a legacy 0o644 file still inside the 5-minute cache TTL is returned by readCache's cache-hit path directly, never reaching writeCache's chmod, so it stayed world-readable for up to 5 minutes after an upgrade even with the rewrite-time fix in place.",
   "files": [
     "internal/client/client.go",
     "internal/client/client_test.go"
   ],
   "call_sites": [
     "os.Chmod(c.cacheDir, 0o700)",
-    "os.Chmod(cacheFile, 0o600)"
+    "os.Chmod(cacheFile, 0o600)  // writeCache",
+    "os.Chmod(cacheFile, 0o600)  // readCache, on a cache-hit whose mode isn't already 0o600"
   ],
-  "validated_outcome": "go build ./... and go test ./... pass. Added TestWriteCache_RechmodsExistingFile, confirmed to fail without the fix (asserts 0o644 stays 0o644) and pass with it. Greptile review threads on PR #1867 resolved for both the initial permission finding and the existing-file re-chmod finding.",
+  "validated_outcome": "go build ./... and go test ./... pass. TestWriteCache_RechmodsExistingFile and TestReadCache_RechmodsFreshLegacyFile both confirmed to fail without their respective fix and pass with it. Greptile review threads on PR #1867 resolved for the initial permission finding, the existing-file re-chmod-on-write finding, and the fresh-file re-chmod-on-read finding.",
   "deferred_to_upstream": [
     {
       "feature": "writeCacheWithHeaders (internal/generator/templates/client.go.tmpl) should chmod the cache file after every write, not only the cache directory after MkdirAll",
       "reason": "The rewrite-time re-chmod gap exists in the current generator template too, not only in this stale print -- any printed CLI upgrading past an older, laxer-permission generator version keeps serving pre-existing cache files at the old mode indefinitely until the cache is cleared."
+    },
+    {
+      "feature": "readCacheWithHeaders (internal/generator/templates/client.go.tmpl) should chmod a cache-hit file before returning it if its mode isn't already 0o600, not rely solely on writeCacheWithHeaders's chmod",
+      "reason": "The read-time re-chmod gap exists in the current generator template too. A cache-hit on a still-fresh legacy file never reaches writeCacheWithHeaders, so it stays world-readable until the TTL naturally expires and forces a rewrite -- a narrower but real version of the same standing exposure."
     }
   ],
-  "upstream_issue": "https://github.com/mvanhorn/cli-printing-press/issues/4428"
+  "upstream_issue": "https://github.com/mvanhorn/cli-printing-press/issues/4428, https://github.com/mvanhorn/cli-printing-press/issues/4466"
 }

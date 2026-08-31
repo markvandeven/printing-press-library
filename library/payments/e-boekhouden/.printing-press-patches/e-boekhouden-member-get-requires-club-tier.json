@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-member-get-requires-club-tier",
+  "applied_at": "2026-08-31",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "`member get` (`GET /v1/member`) is annotated `pp:requires-tier: club-or-association` so live dogfood correctly classifies a regular-administration token's MEM_056 response as an expected tier gap rather than a command bug.",
+  "reason": "Same pattern as `administration get`: the API itself scopes this endpoint to club/association administrations only (its own generated Short text already said so) and returns MEM_056 for every other account type. A live Phase 5 acceptance run with a real, non-club token surfaced this as a false-positive failure without the annotation.",
+  "files": [
+    "internal/cli/member_get.go"
+  ],
+  "call_sites": [
+    "Annotations: map[string]string{... \"pp:requires-tier\": \"club-or-association\"}"
+  ],
+  "validated_outcome": "Live Phase 5 dogfood run with a real non-club/association token: `member get` reports skip (blocked-fixture: requires auth tier) instead of fail."
+}

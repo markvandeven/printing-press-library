@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-administration-get-requires-accountant-tier",
+  "applied_at": "2026-08-31",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "`administration get` (the raw pass-through for `GET /v1/administration`) is annotated `pp:requires-tier: accountant` so live dogfood correctly classifies a non-accountant token's EP_001 response as an expected tier gap rather than a command bug.",
+  "reason": "Discovered running a live Phase 5 acceptance pass with a real, non-accountant read-only token: the command legitimately returns the API's own EP_001 (\"only available to accountants\") for the large majority of real tokens, which is correct pass-through behavior, not a defect -- unlike `administration overview` (already patched separately) which aggregates this call and must degrade gracefully instead of failing outright. Without the annotation, every live acceptance run against a non-accountant token reports a false-positive failure here.",
+  "files": [
+    "internal/cli/administration_get.go"
+  ],
+  "call_sites": [
+    "Annotations: map[string]string{... \"pp:requires-tier\": \"accountant\"}"
+  ],
+  "validated_outcome": "Live Phase 5 dogfood run with a real non-accountant token: `administration get` now reports skip (blocked-fixture: requires auth tier \"accountant\") instead of fail."
+}

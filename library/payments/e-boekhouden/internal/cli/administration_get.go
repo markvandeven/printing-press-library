@@ -21,7 +21,7 @@ func newAdministrationGetCmd(flags *rootFlags) *cobra.Command {
 		Aliases:     []string{"list"},
 		Short:       "Get all administrations managed by the authorized accountant.",
 		Example:     "  e-boekhouden-pp-cli administration get",
-		Annotations: map[string]string{"pp:endpoint": "administration.get", "pp:method": "GET", "pp:path": "/v1/administration", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "administration.get", "pp:method": "GET", "pp:path": "/v1/administration", "mcp:read-only": "true", "pp:requires-tier": "accountant"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {

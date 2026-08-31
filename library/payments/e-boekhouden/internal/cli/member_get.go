@@ -25,7 +25,7 @@ func newMemberGetCmd(flags *rootFlags) *cobra.Command {
 		Aliases:     []string{"list"},
 		Short:       "Get all members (only available to clubs or associations).",
 		Example:     "  e-boekhouden-pp-cli member get",
-		Annotations: map[string]string{"pp:endpoint": "member.get", "pp:method": "GET", "pp:path": "/v1/member", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "member.get", "pp:method": "GET", "pp:path": "/v1/member", "mcp:read-only": "true", "pp:requires-tier": "club-or-association"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {

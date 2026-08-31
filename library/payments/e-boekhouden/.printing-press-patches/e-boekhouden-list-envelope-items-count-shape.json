@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-list-envelope-items-count-shape",
+  "applied_at": "2026-08-31",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "Every list-shaped GET response (outstanding invoices, ledger balances, linked administrations) wraps its array in an `{\"items\": [...], \"count\": N}` envelope (case-insensitive key) rather than returning a bare array as the spec's stubbed response schema claims -- parsing must go through a shared envelope-tolerant extractor, not a direct array unmarshal.",
+  "reason": "Discovered live: the bare-array assumption broke `report outstanding-aging` parsing outright (hard error) and silently zeroed every count in `administration overview`'s rendering and ledger-balance table. A shared `extractItems`/`extractItemsFromEnvelope` helper now tolerates both an envelope and a bare array.",
+  "files": [
+    "internal/cli/sync.go",
+    "internal/cli/report.go",
+    "internal/cli/administration_overview.go"
+  ],
+  "call_sites": [
+    "func extractItemsFromEnvelope(envelope map[string]json.RawMessage) ([]json.RawMessage, bool)",
+    "func extractItems(data json.RawMessage) []map[string]any"
+  ],
+  "validated_outcome": "Live: report outstanding-aging parses successfully and administration overview's counts/tables render correctly against the real envelope shape."
+}

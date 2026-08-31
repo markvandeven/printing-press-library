@@ -1,0 +1,20 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-mutation-list-lacks-rows-use-amount-ledgerid",
+  "applied_at": "2026-08-31",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "The mutation *list* endpoint's real response shape has no per-line `rows` breakdown -- only top-level `amount`/`ledgerId` -- so any command computing amounts from a plain `sync` must use those top-level fields; the `rows` breakdown only exists on the `GET /v1/mutation/{id}` detail response and requires `mutation get-id` write-through-caching to become available locally.",
+  "reason": "The OpenAPI spec's list schema (`MutationsResponseDto`) was an undefined `$ref`, generator-stubbed as a permissive object matching the (correct) detail schema. Live testing showed the real list response only exposes `amount`/`ledgerId`, so `mutation suggest`, `ledger history`'s row matching, and `relation statement`'s amount computation silently returned 0/empty against real synced data until switched to the top-level fields. `report vat-summary` now documents that full VAT-row coverage depends on caching individual mutations via `mutation get-id`, not a plain sync.",
+  "files": [
+    "internal/cli/mutation_suggest.go",
+    "internal/cli/ledger_history.go",
+    "internal/cli/relation_statement.go",
+    "internal/cli/report.go"
+  ],
+  "call_sites": [
+    "rows, err := db.DB().QueryContext(cmd.Context(), query, likeArgs...)  // mutation_suggest.go",
+    "\"(rows) is only available on a GET /v1/mutation/{id} detail fetch, not the\""
+  ],
+  "validated_outcome": "Verified live against real synced mutation data: mutation suggest, ledger history, and relation statement compute correct non-zero amounts from top-level fields; vat-summary's documented caveat matches actual coverage."
+}

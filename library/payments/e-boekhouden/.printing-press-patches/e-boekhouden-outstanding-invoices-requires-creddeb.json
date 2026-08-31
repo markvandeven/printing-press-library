@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-outstanding-invoices-requires-creddeb",
+  "applied_at": "2026-08-31",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "`GET /v1/mutation/invoice/outstanding` requires the query parameter `credDeb` (`D` = debtors/AR, `C` = creditors/AP) -- it is not optional despite the spec not marking it required -- and the two values must be queried and reported separately since the API holds both AR and AP data.",
+  "reason": "Undocumented as a hard requirement until hit live: omitting `credDeb` fails with MUTA_006. The initial implementation also wrongly assumed the API only exposed debtor (AR) data; it holds creditor (AP) data too, so both call sites now query `credDeb=D` and `credDeb=C` separately and report AR/AP distinctly.",
+  "files": [
+    "internal/cli/administration_overview.go",
+    "internal/cli/report.go"
+  ],
+  "call_sites": [
+    "c.Get(cmd.Context(), \"/v1/mutation/invoice/outstanding\", map[string]string{\"credDeb\": \"D\"})",
+    "c.Get(cmd.Context(), \"/v1/mutation/invoice/outstanding\", map[string]string{\"credDeb\": \"C\"})"
+  ],
+  "validated_outcome": "Verified live: omitting credDeb fails with MUTA_006; querying D and C separately succeeds and returns distinct AR/AP rows against a real account with both."
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-balance-ledger-id-race-fallback",
+  "applied_at": "2026-08-31",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "A balance row's `ledger_id` foreign-key lookup must fall back to the balance's own resolved code when no matching `ledger` row is found yet, because `sync` runs resources concurrently and the `ledger` table is not guaranteed to have committed before `ledger-balances` processes -- nothing else in this codebase depends on `ledger_id` being the true numeric id.",
+  "reason": "Even after fixing the resource-name-to-table remap, the lookup depended on `ledger` having already committed the matching row. Confirmed live via interleaved sync progress events that `ledger` and `ledger-balances` sync concurrently, so the lookup legitimately misses on a real full sync some of the time.",
+  "files": [
+    "internal/store/store.go"
+  ],
+  "call_sites": [
+    "ledgerID := lookupFieldValue(obj, \"ledger_id\")"
+  ],
+  "validated_outcome": "Live full sync no longer errors or drops balance rows when ledger-balances processes a code before the matching ledger row has committed."
+}

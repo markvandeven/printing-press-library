@@ -238,14 +238,19 @@ func (c *Client) cacheKey(path string, params map[string]string) string {
 func (c *Client) readCache(path string, params map[string]string) (json.RawMessage, bool) {
 	cacheFile := filepath.Join(c.cacheDir, c.cacheKey(path, params)+".json")
 	info, err := os.Stat(cacheFile)
-	if err != nil || time.Since(info.ModTime()) > 5*time.Minute {
+	if err != nil {
 		return nil, false
 	}
-	// A cache-hit on a file still inside the TTL never reaches writeCache's
-	// chmod, so a fresh legacy 0o644 entry written before an upgrade would
-	// otherwise stay world-readable for up to 5 minutes after the upgrade.
+	// Correct a legacy file's permissions on every read this function reaches,
+	// expired or not — otherwise a legacy 0o644 entry that expires before its
+	// key is ever successfully rewritten (a failed live fetch, an API outage)
+	// stays world-readable indefinitely, since writeCache's chmod would never
+	// run for it.
 	if info.Mode().Perm() != 0o600 {
 		os.Chmod(cacheFile, 0o600)
+	}
+	if time.Since(info.ModTime()) > 5*time.Minute {
+		return nil, false
 	}
 	data, err := os.ReadFile(cacheFile)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf8"
 )
 
@@ -74,6 +75,42 @@ func TestReadCache_RechmodsFreshLegacyFile(t *testing.T) {
 	}
 	if got := info.Mode().Perm(); got != 0o600 {
 		t.Fatalf("cache file mode = %o, want 0600 (a fresh legacy 0644 entry must be re-chmodded on a cache-hit read, not only on rewrite)", got)
+	}
+}
+
+// TestReadCache_RechmodsExpiredLegacyFile guards against the gap Greptile
+// found in the fresh-file fix above: the TTL check used to return a cache
+// miss before the chmod ever ran, so a legacy 0o644 entry that expired
+// before its key was successfully rewritten (a failed live fetch, an API
+// outage) stayed world-readable indefinitely.
+func TestReadCache_RechmodsExpiredLegacyFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX permission bits don't map cleanly to Windows ACLs")
+	}
+	t.Parallel()
+
+	dir := t.TempDir()
+	c := &Client{cacheDir: dir}
+
+	cacheFile := filepath.Join(dir, c.cacheKey("/v1/mutations", nil)+".json")
+	if err := os.WriteFile(cacheFile, []byte(`{"stale": true}`), 0o644); err != nil {
+		t.Fatalf("seed expired legacy cache file: %v", err)
+	}
+	expired := time.Now().Add(-10 * time.Minute)
+	if err := os.Chtimes(cacheFile, expired, expired); err != nil {
+		t.Fatalf("backdate cache file mtime: %v", err)
+	}
+
+	if _, ok := c.readCache("/v1/mutations", nil); ok {
+		t.Fatalf("readCache: expected a miss on an expired file")
+	}
+
+	info, err := os.Stat(cacheFile)
+	if err != nil {
+		t.Fatalf("stat cache file: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("cache file mode = %o, want 0600 (an expired legacy 0644 entry must be re-chmodded even on a cache-miss read)", got)
 	}
 }
 

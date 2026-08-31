@@ -245,9 +245,13 @@ func (c *Client) readCache(path string, params map[string]string) (json.RawMessa
 	// expired or not — otherwise a legacy 0o644 entry that expires before its
 	// key is ever successfully rewritten (a failed live fetch, an API outage)
 	// stays world-readable indefinitely, since writeCache's chmod would never
-	// run for it.
+	// run for it. If the correction itself fails (e.g. a filesystem that
+	// doesn't support changing permissions), don't serve financial data from
+	// an entry we couldn't confirm is no longer world-readable.
 	if info.Mode().Perm() != 0o600 {
-		os.Chmod(cacheFile, 0o600)
+		if err := os.Chmod(cacheFile, 0o600); err != nil {
+			return nil, false
+		}
 	}
 	if time.Since(info.ModTime()) > 5*time.Minute {
 		return nil, false

@@ -35,7 +35,7 @@ func newNovelMutationSuggestCmd(flags *rootFlags) *cobra.Command {
 			"breakdown — that breakdown (rows) is only present on a GET /v1/mutation/{id}\n" +
 			"detail fetch, not the list response `sync` uses.",
 		Example:     "  e-boekhouden-pp-cli mutation suggest \"Office supplies - Staples\" --json",
-		Annotations: map[string]string{"mcp:read-only": "true"},
+		Annotations: map[string]string{"mcp:read-only": "true", "pp:no-error-path-probe": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return cmd.Help()

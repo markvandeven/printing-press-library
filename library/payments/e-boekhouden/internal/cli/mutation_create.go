@@ -32,7 +32,7 @@ func newMutationCreateCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "create",
 		Short:       "Create a new mutation.",
-		Example:     "  e-boekhouden-pp-cli mutation create --date 2026-01-15 --ledger-id 1300 --type 7 --rows '[...]' --confirm",
+		Example:     `  e-boekhouden-pp-cli mutation create --date 2026-01-15 --ledger-id 1300 --type 7 --rows '[{"ledgerId":1300,"amount":100,"description":"Example row"}]' --confirm`,
 		Annotations: map[string]string{"pp:endpoint": "mutation.create", "pp:method": "POST", "pp:path": "/v1/mutation"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help

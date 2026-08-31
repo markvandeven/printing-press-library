@@ -17,7 +17,7 @@ func newSwaggerGetCmd(flags *rootFlags) *cobra.Command {
 		Use:         "get <catchAll>",
 		Short:       "Get",
 		Example:     "  e-boekhouden-pp-cli swagger get example-value",
-		Annotations: map[string]string{"pp:endpoint": "swagger.get", "pp:method": "GET", "pp:path": "/swagger/{catchAll}", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "swagger.get", "pp:method": "GET", "pp:path": "/swagger/{catchAll}", "mcp:read-only": "true", "pp:no-error-path-probe": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return cmd.Help()

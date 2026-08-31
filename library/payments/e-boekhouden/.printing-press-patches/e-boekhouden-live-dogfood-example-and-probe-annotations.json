@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "id": "e-boekhouden-live-dogfood-example-and-probe-annotations",
+  "applied_at": "2026-08-31",
+  "base_run_id": "20260829-182823",
+  "base_printing_press_version": "4.22.0",
+  "summary": "Two commands had non-functional placeholder values in their `Example:` text (`--rows '[...]'`, `--cred-deb example-value`) fixed to real, runnable values; three commands whose positional legitimately has no invalid-input error case (a free-text search, a local-store lookup where \"not found\" is a valid empty result, a raw API passthrough the live API itself doesn't validate its path param for) are annotated `pp:no-error-path-probe`.",
+  "reason": "Discovered running live Phase 5 acceptance with a real read-only token: `mutation create` and `mutation get-outstanding-invoices`'s `Example:` fields used copy-paste-looking but non-functional placeholders, which is a real (minor) doc bug independent of testing -- a user following the example verbatim would hit the same parse/validation error the live dogfood harness did. `mutation suggest <description>` and `relation statement <relation-id>` are novel (hand-authored) commands, so the generator's automatic `pp:no-error-path-probe` detection (`endpointSkipsErrorPathProbe`, spec-derived single free-text positional) never runs on them. `swagger get <catchAll>`'s single positional is a path param, so that same auto-detection correctly declines to exempt it in the general case (path-param positionals should usually be probed) -- this specific upstream endpoint just happens not to validate its path parameter, a legitimate hand-annotated exception matching the same pattern already used in the generator's own `tail.go.tmpl`.",
+  "files": [
+    "internal/cli/mutation_create.go",
+    "internal/cli/mutation_get-outstanding-invoices.go",
+    "internal/cli/mutation_suggest.go",
+    "internal/cli/relation_statement.go",
+    "internal/cli/swagger_get.go"
+  ],
+  "call_sites": [
+    "Example: `  e-boekhouden-pp-cli mutation create --date 2026-01-15 --ledger-id 1300 --type 7 --rows '[{\"ledgerId\":1300,\"amount\":100,\"description\":\"Example row\"}]' --confirm`",
+    "Example: \"  e-boekhouden-pp-cli mutation get-outstanding-invoices --cred-deb D\"",
+    "Annotations: map[string]string{... \"pp:no-error-path-probe\": \"true\"}  // mutation suggest, relation statement, swagger get"
+  ],
+  "validated_outcome": "Live Phase 5 dogfood run with a real read-only token: verdict PASS, 151/151, 0 failed (previously 7 failing test cases across these 5 commands). go build/vet/test all pass."
+}

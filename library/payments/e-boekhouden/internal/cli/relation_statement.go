@@ -31,7 +31,7 @@ func newNovelRelationStatementCmd(flags *rootFlags) *cobra.Command {
 			"cumulative running balance (invoices add to the balance owed, payment\n" +
 			"mutations of type 3/4 reduce it). Local computation from synced data only.",
 		Example:     "  e-boekhouden-pp-cli relation statement 789012 --json",
-		Annotations: map[string]string{"mcp:read-only": "true"},
+		Annotations: map[string]string{"mcp:read-only": "true", "pp:no-error-path-probe": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return cmd.Help()

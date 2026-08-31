@@ -21,7 +21,7 @@ func newMutationGetOutstandingInvoicesCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "get-outstanding-invoices",
 		Short:       "Get all outstanding invoices.",
-		Example:     "  e-boekhouden-pp-cli mutation get-outstanding-invoices --cred-deb example-value",
+		Example:     "  e-boekhouden-pp-cli mutation get-outstanding-invoices --cred-deb D",
 		Annotations: map[string]string{"pp:endpoint": "mutation.get-outstanding-invoices", "pp:method": "GET", "pp:path": "/v1/mutation/invoice/outstanding", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
